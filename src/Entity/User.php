@@ -3,7 +3,9 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Ramsey\Uuid\Doctrine\UuidGenerator;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
@@ -18,32 +20,61 @@ use Symfony\Component\Security\Core\User\UserInterface;
 class User extends AbstractEntity implements UserInterface
 {
     /**
-     * @ORM\Id
-     * @ORM\Column(type="integer")
-     * @ORM\GeneratedValue(strategy="IDENTITY")
+     * User constructor.
      */
-    private $id;
+    public function __construct()
+    {
+        $this->sessions = new ArrayCollection();
+    }
+
+    /**
+     * @var string
+     * @ORM\Id
+     * @ORM\Column(type="uuid", unique=true)
+     * @ORM\GeneratedValue(strategy="CUSTOM")
+     * @ORM\CustomIdGenerator(class=UuidGenerator::class)
+     */
+    protected $uuid;
 
     /**
      * @ORM\Column(type="string", length=180, unique=true)
      */
-    private $email;
+    protected $email;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string")
+     */
+    protected $firstname;
+
+    /**
+     * @var string|null
+     * @ORM\Column(type="string", nullable=true)
+     */
+    protected $middlename;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string")
+     */
+    protected $lastname;
 
     /**
      * @ORM\Column(type="json")
      */
-    private $roles = [];
+    protected $roles = [];
 
     /**
      * @var string The hashed password
      * @ORM\Column(type="string")
      */
-    private $password;
+    protected $password;
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    /**
+     * @var ArrayCollection
+     * @ORM\OneToMany(targetEntity="UserSession", mappedBy="user")
+     */
+    protected $sessions;
 
     public function getEmail(): ?string
     {
@@ -65,6 +96,54 @@ class User extends AbstractEntity implements UserInterface
     public function getUsername(): string
     {
         return (string)$this->email;
+    }
+
+    /**
+     * @return string
+     */
+    public function getFirstname(): string
+    {
+        return $this->firstname;
+    }
+
+    /**
+     * @param string $firstname
+     */
+    public function setFirstname(string $firstname): void
+    {
+        $this->firstname = $firstname;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getMiddlename(): ?string
+    {
+        return $this->middlename;
+    }
+
+    /**
+     * @param string|null $middlename
+     */
+    public function setMiddlename(?string $middlename): void
+    {
+        $this->middlename = $middlename;
+    }
+
+    /**
+     * @return string
+     */
+    public function getLastname(): string
+    {
+        return $this->lastname;
+    }
+
+    /**
+     * @param string $lastname
+     */
+    public function setLastname(string $lastname): void
+    {
+        $this->lastname = $lastname;
     }
 
     /**
@@ -99,6 +178,22 @@ class User extends AbstractEntity implements UserInterface
         $this->password = $password;
 
         return $this;
+    }
+
+    /**
+     * @return ArrayCollection
+     */
+    public function getSessions(): ArrayCollection
+    {
+        return $this->sessions;
+    }
+
+    /**
+     * @param ArrayCollection $sessions
+     */
+    public function setSessions(ArrayCollection $sessions): void
+    {
+        $this->sessions = $sessions;
     }
 
     /**

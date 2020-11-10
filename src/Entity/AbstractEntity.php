@@ -17,6 +17,7 @@ use Ramsey\Uuid\Uuid;
 abstract class AbstractEntity
 {
     /**
+     * @var string
      * @ORM\Column(type="uuid", unique=true)
      */
     protected $uuid;
@@ -34,18 +35,18 @@ abstract class AbstractEntity
     protected $updatedAt;
 
     /**
-     * @return mixed
+     * @return string
      */
-    public function getUuid()
+    public function getUuid(): string
     {
         return $this->uuid;
     }
 
     /**
-     * @param mixed $uuid
+     * @param string $uuid
      * @return AbstractEntity
      */
-    public function setUuid($uuid): self
+    public function setUuid(string $uuid): self
     {
         $this->uuid = $uuid;
 
@@ -96,7 +97,6 @@ abstract class AbstractEntity
      */
     public function prePersist(): self
     {
-        $this->uuid = Uuid::uuid1();
         $this->createdAt = new \DateTime;
 
         return $this;
