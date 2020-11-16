@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Auth\Security;
+namespace App\Module\Auth\Security;
 
 use App\Repository\UserRepository;
 use App\Utility\JWTUtils;
@@ -16,7 +16,7 @@ use Symfony\Component\Security\Guard\AbstractGuardAuthenticator;
 
 /**
  * Class JWTAuthenticator
- * @package App\Modules\Auth\Security
+ * @package App\Module\Auth\Security
  */
 class JWTAuthenticator extends AbstractGuardAuthenticator
 {

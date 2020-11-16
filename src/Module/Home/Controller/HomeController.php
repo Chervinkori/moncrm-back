@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Home\Controller;
+namespace App\Module\Home\Controller;
 
 use App\Utility\ResponseUtils;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

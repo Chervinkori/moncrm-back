@@ -2,11 +2,13 @@
 
 namespace App\Entity;
 
-use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Security\Core\Validator\Constraints as SecurityAssert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
  * Пользователь системы
@@ -16,6 +18,8 @@ use Symfony\Component\Security\Core\User\UserInterface;
  *
  * @ORM\Entity(repositoryClass=UserRepository::class)
  * @ORM\Table(name="`user`")
+ *
+ * @UniqueEntity(fields="email", message="Пользователь с таким адресом электронной почты уже существует.", groups={"common"})
  */
 class User extends AbstractEntity implements UserInterface
 {
@@ -37,25 +41,37 @@ class User extends AbstractEntity implements UserInterface
     protected $uuid;
 
     /**
+     * @var string
      * @ORM\Column(type="string", length=180, unique=true)
+     *
+     * @Assert\NotBlank(groups={"common"})
+     * @Assert\Email(groups={"common"})
      */
     protected $email;
 
     /**
      * @var string
      * @ORM\Column(type="string")
+     *
+     * @Assert\NotBlank(groups={"common"})
+     * @Assert\Length(min=2, max=50, groups={"common"})
      */
     protected $firstname;
 
     /**
      * @var string|null
      * @ORM\Column(type="string", nullable=true)
+     *
+     * @Assert\Length(min=2, max=50, groups={"common"})
      */
     protected $middlename;
 
     /**
      * @var string
      * @ORM\Column(type="string")
+     *
+     * @Assert\NotBlank(groups={"common"})
+     * @Assert\Length(min=2, max=50, groups={"common"})
      */
     protected $lastname;
 
@@ -67,6 +83,9 @@ class User extends AbstractEntity implements UserInterface
     /**
      * @var string The hashed password
      * @ORM\Column(type="string")
+     *
+     * @Assert\NotBlank(groups={"common"})
+     * @Assert\NotCompromisedPassword(groups={"common"})
      */
     protected $password;
 

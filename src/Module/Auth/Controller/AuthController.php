@@ -1,22 +1,24 @@
 <?php
 
-namespace App\Modules\Auth\Controller;
+namespace App\Module\Auth\Controller;
 
+use App\Component\Response\ResponseData;
 use App\Entity\User;
 use App\Entity\UserSession;
-use App\Modules\Auth\Service\UserSessionService;
+use App\Hydrator\UserHydratorBuilder;
+use App\Module\Auth\Service\UserSessionService;
 use App\Repository\UserRepository;
 use App\Repository\UserSessionRepository;
 use App\Utility\JWTUtils;
 use App\Utility\ResponseUtils;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * @Route("/auth", name="auth_")
@@ -26,42 +28,39 @@ use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
  */
 class AuthController extends AbstractController
 {
-//    /**
-//     * @IsGranted("IS_ANONYMOUS")
-//     * @Route("/register", name="register", methods={"POST"})
-//     *
-//     * @param Request $request
-//     * @param UserRepository $userRepository
-//     * @param UserPasswordEncoderInterface $encoder
-//     * @return JsonResponse
-//     */
-//    public function register(
-//        Request $request,
-//        UserRepository $userRepository,
-//        UserPasswordEncoderInterface $encoder
-//    ): JsonResponse {
-//        $password = $request->get('password');
-//        $email = $request->get('email');
-//
-//        // Проверяем уникальность почты
-//        $user = $userRepository->findOneBy(['email' => $email]);
-//        if (!$user) {
-//            return ResponseUtils::jsonError('Пользователь с таким адресом электронной почты уже существует');
-//        }
-//
-//        // Создаем пользователя
-//        $user = new User();
-//        $user->setPassword($encoder->encodePassword($user, $password));
-//        $user->setEmail($email);
-//
-//        $em = $this->getDoctrine()->getManager();
-//        $em->persist($user);
-//        $em->flush();
-//
-//        // TODO: ЖЦ
-//
-//        return ResponseUtils::jsonSuccess(['uuid' => $user->getUuid(), 'email' => $user->getEmail()]);
-//    }
+    /**
+     * @Route("/register", name="register", methods={"POST"})
+     *
+     * @param Request $request
+     * @param UserHydratorBuilder $userHydratorBuilder
+     * @param ValidatorInterface $validator
+     * @param ResponseData $responseData
+     * @return JsonResponse
+     */
+    public function register(
+        Request $request,
+        UserHydratorBuilder $userHydratorBuilder,
+        ValidatorInterface $validator,
+        ResponseData $responseData
+    ): JsonResponse {
+        $hydrator = $userHydratorBuilder->build();
+        $user = $hydrator->hydrate($request->request->all(), new User());
+
+        $errors = $validator->validate($user, null, 'common');
+        if (count($errors) > 0) {
+            return new JsonResponse($responseData->addValidationErrors($errors)->toArray(), Response::HTTP_BAD_REQUEST);
+        }
+
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($user);
+        $em->flush();
+
+        // TODO: ЖЦ
+
+        return new JsonResponse(
+            $responseData->setData(['uuid' => $user->getUuid(), 'email' => $user->getEmail()])->toArray()
+        );
+    }
 
     /**
      * @IsGranted("IS_ANONYMOUS")
@@ -91,7 +90,7 @@ class AuthController extends AbstractController
 
         // Удаляем просроченные сессии пользователя
         $userSessionService->deleteExpireSession($user);
-        // Делаем поиск текущей сессии
+        // Делаем поиск текущей сессии (по ip)
         // В теории их может быть несколько (это некорректно)
         $currentUserSessions = $userSessionRepository->getActiveSessions($user, $request->getClientIp());
         // Удаляем текущие сессии (чтобы не дублировать)

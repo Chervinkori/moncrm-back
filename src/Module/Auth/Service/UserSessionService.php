@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Auth\Service;
+namespace App\Module\Auth\Service;
 
 use App\Entity\User;
 use App\Entity\UserSession;
