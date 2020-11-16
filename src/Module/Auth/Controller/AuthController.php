@@ -3,14 +3,13 @@
 namespace App\Module\Auth\Controller;
 
 use App\Component\Response\ResponseData;
+use App\Component\Token\JWT;
 use App\Entity\User;
 use App\Entity\UserSession;
 use App\Hydrator\UserHydratorBuilder;
 use App\Module\Auth\Service\UserSessionService;
 use App\Repository\UserRepository;
 use App\Repository\UserSessionRepository;
-use App\Utility\JWTUtils;
-use App\Utility\ResponseUtils;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -39,9 +38,9 @@ class AuthController extends AbstractController
      */
     public function register(
         Request $request,
+        ResponseData $responseData,
         UserHydratorBuilder $userHydratorBuilder,
-        ValidatorInterface $validator,
-        ResponseData $responseData
+        ValidatorInterface $validator
     ): JsonResponse {
         $hydrator = $userHydratorBuilder->build();
         $user = $hydrator->hydrate($request->request->all(), new User());
@@ -55,7 +54,7 @@ class AuthController extends AbstractController
         $em->persist($user);
         $em->flush();
 
-        // TODO: ЖЦ
+        // TODO: ЖЦ ?
 
         return new JsonResponse(
             $responseData->setData(['uuid' => $user->getUuid(), 'email' => $user->getEmail()])->toArray()
@@ -67,6 +66,7 @@ class AuthController extends AbstractController
      * @Route("/login", name="login", methods={"POST"})
      *
      * @param Request $request
+     * @param ResponseData $responseData
      * @param UserRepository $userRepository
      * @param UserPasswordEncoderInterface $encoder
      * @param UserSessionService $userSessionService
@@ -76,6 +76,7 @@ class AuthController extends AbstractController
      */
     public function login(
         Request $request,
+        ResponseData $responseData,
         UserRepository $userRepository,
         UserPasswordEncoderInterface $encoder,
         UserSessionService $userSessionService,
@@ -85,7 +86,10 @@ class AuthController extends AbstractController
         $user = $userRepository->findOneBy(['email' => $request->get('email')]);
         // Проверяем пользователя и валидность пароля
         if (!$user || !$encoder->isPasswordValid($user, $request->get('password'))) {
-            return ResponseUtils::jsonError('Неверный логин или пароль');
+            return new JsonResponse(
+                $responseData->addError('Неверный логин или пароль')->toArray(),
+                Response::HTTP_BAD_REQUEST
+            );
         }
 
         // Удаляем просроченные сессии пользователя
@@ -99,7 +103,7 @@ class AuthController extends AbstractController
         $userSession = $userSessionService->createUserSession($user, $request->getClientIp());
 
         // Генерируем токен доступа
-        $accessToken = JWTUtils::encode(
+        $accessToken = JWT::encode(
             ['uuid' => $user->getUuid()],
             $this->getParameter('app_secret'),
             $this->getParameter('access_token_lifetime')
@@ -108,9 +112,10 @@ class AuthController extends AbstractController
         // Создаем куку для рефреш токена (сессии)
         $userSessionCookie = $userSessionService->createUserSessionCookie($userSession);
 
-        return ResponseUtils::jsonSuccess(
-            ['access_token' => $accessToken, 'refresh_token' => $userSession->getUuid(), 'token_type' => 'bearer'],
-            null,
+        return new JsonResponse(
+            $responseData->setData(
+                ['access_token' => $accessToken, 'refresh_token' => $userSession->getUuid(), 'token_type' => 'bearer']
+            )->toArray(),
             Response::HTTP_OK,
             ['set-cookie' => [$userSessionCookie]]
         );
@@ -120,6 +125,7 @@ class AuthController extends AbstractController
      * @Route("/refresh-token", name="refresh-token", methods={"POST"})
      *
      * @param Request $request
+     * @param ResponseData $responseData
      * @param UserSessionRepository $userSessionRepository
      * @param UserSessionService $userSessionService
      * @return JsonResponse
@@ -127,11 +133,15 @@ class AuthController extends AbstractController
      */
     public function refreshToken(
         Request $request,
+        ResponseData $responseData,
         UserSessionRepository $userSessionRepository,
         UserSessionService $userSessionService
     ): JsonResponse {
         if (!$request->cookies->has('refresh_token')) {
-            return ResponseUtils::jsonError('Отсутствует токен обновления доступа');
+            return new JsonResponse(
+                $responseData->addError('Отсутствует токен обновления доступа')->toArray(),
+                Response::HTTP_BAD_REQUEST
+            );
         }
 
         // Получаем из кук рефреш токен
@@ -140,7 +150,10 @@ class AuthController extends AbstractController
         /** @var UserSession $userSession */
         $userSession = $userSessionRepository->find($refreshToken);
         if (!$userSession) {
-            return ResponseUtils::jsonError('Сессия пользователя не найдена');
+            return new JsonResponse(
+                $responseData->addError('Сессия пользователя не найдена')->toArray(),
+                Response::HTTP_BAD_REQUEST
+            );
         }
 
         // Проверяем что рефреш токен не украден.
@@ -152,8 +165,10 @@ class AuthController extends AbstractController
             $em->flush();
 
             // TODO: логирование?
-
-            return ResponseUtils::jsonError('Сессия пользователя не найдена');
+            return new JsonResponse(
+                $responseData->addError('Сессия пользователя не найдена')->toArray(),
+                Response::HTTP_BAD_REQUEST
+            );
         }
 
         // Получаем пользователя из сессии, т.к. дальше сессия удаляется
@@ -165,7 +180,7 @@ class AuthController extends AbstractController
         $userSession = $userSessionService->createUserSession($user, $request->getClientIp());
 
         // Генерируем токен доступа
-        $accessToken = JWTUtils::encode(
+        $accessToken = JWT::encode(
             ['uuid' => $userSession->getUser()->getUuid()],
             $this->getParameter('app_secret'),
             $this->getParameter('access_token_lifetime')
@@ -174,9 +189,10 @@ class AuthController extends AbstractController
         // Создаем куку для рефреш токена (сессии)
         $userSessionCookie = $userSessionService->createUserSessionCookie($userSession);
 
-        return ResponseUtils::jsonSuccess(
-            ['access_token' => $accessToken, 'refresh_token' => $userSession->getUuid(), 'token_type' => 'bearer'],
-            null,
+        return new JsonResponse(
+            $responseData->setData(
+                ['access_token' => $accessToken, 'refresh_token' => $userSession->getUuid(), 'token_type' => 'bearer']
+            )->toArray(),
             Response::HTTP_OK,
             ['set-cookie' => [$userSessionCookie]]
         );

@@ -29,7 +29,7 @@ abstract class AbstractEntity
     protected $createdAt;
 
     /**
-     * @var \DateTime
+     * @var \DateTime|null
      * @ORM\Column(type="datetime", nullable=true)
      */
     protected $updatedAt;
@@ -73,9 +73,9 @@ abstract class AbstractEntity
     }
 
     /**
-     * @return \DateTime
+     * @return \DateTime|null
      */
-    public function getUpdatedAt(): \DateTime
+    public function getUpdatedAt()
     {
         return $this->updatedAt;
     }

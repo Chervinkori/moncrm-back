@@ -155,6 +155,11 @@ class ResponseData
         // Чистим пустые элементы
         $result['meta'] = array_filter($result['meta']);
 
+        // Если есть ошибки - удаляем мету и дату
+        if (count($this->error) > 0) {
+            unset($result['meta'], $result['data']);
+        }
+
         return $result;
     }
 }

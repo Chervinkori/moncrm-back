@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\UserRepository;
+use Doctrine\ORM\PersistentCollection;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -90,7 +92,7 @@ class User extends AbstractEntity implements UserInterface
     protected $password;
 
     /**
-     * @var ArrayCollection
+     * @var ArrayCollection|PersistentCollection
      * @ORM\OneToMany(targetEntity="UserSession", mappedBy="user")
      */
     protected $sessions;
@@ -200,19 +202,22 @@ class User extends AbstractEntity implements UserInterface
     }
 
     /**
-     * @return ArrayCollection
+     * @return ArrayCollection|PersistentCollection
      */
-    public function getSessions(): ArrayCollection
+    public function getSessions()
     {
         return $this->sessions;
     }
 
     /**
-     * @param ArrayCollection $sessions
+     * @param $sessions
+     * @return $this
      */
-    public function setSessions(ArrayCollection $sessions): void
+    public function setSessions($sessions): self
     {
         $this->sessions = $sessions;
+
+        return $this;
     }
 
     /**

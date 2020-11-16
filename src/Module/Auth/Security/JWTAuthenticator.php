@@ -2,8 +2,8 @@
 
 namespace App\Module\Auth\Security;
 
+use App\Component\Token\JWT;
 use App\Repository\UserRepository;
-use App\Utility\JWTUtils;
 use App\Utility\ResponseUtils;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -64,7 +64,7 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
         $jwt = str_replace('Bearer ', '', $request->headers->get('Authorization'));
         // Декодируем и проверяем токен
         try {
-            $payload = JWTUtils::decode($jwt, $this->params->get('app_secret'), 'HS256');
+            $payload = JWT::decode($jwt, $this->params->get('app_secret'), 'HS256');
         } catch (\Exception $exp) {
             throw new AuthenticationException('Ошибка декодирования JWT: ' . $exp->getMessage());
         }

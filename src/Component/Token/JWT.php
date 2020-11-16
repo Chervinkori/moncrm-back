@@ -1,14 +1,12 @@
 <?php
 
-namespace App\Utility;
-
-use Firebase\JWT\JWT;
+namespace App\Component\Token;
 
 /**
- * Class JWTUtils
- * @package App\Utility
+ * Class JWT
+ * @package App\Component\Token
  */
-class JWTUtils
+class JWT
 {
     /**
      * @param array $payload
@@ -37,7 +35,7 @@ class JWTUtils
             $payload['exp'] = $date->modify('+' . $lifetime . ' second')->getTimestamp();
         }
 
-        return JWT::encode(
+        return \Firebase\JWT\JWT::encode(
             $payload,
             $key,
             $alg,
@@ -56,7 +54,7 @@ class JWTUtils
      */
     public static function decode(string $jwt, $key, $allowed_algs): array
     {
-        return (array)JWT::decode(
+        return (array)\Firebase\JWT\JWT::decode(
             $jwt,
             $key,
             (is_array($allowed_algs) ? $allowed_algs : [$allowed_algs])
