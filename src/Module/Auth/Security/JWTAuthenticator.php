@@ -2,10 +2,11 @@
 
 namespace App\Module\Auth\Security;
 
+use App\Component\Response\ResponseData;
 use App\Component\Token\JWT;
 use App\Repository\UserRepository;
-use App\Utility\ResponseUtils;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -113,9 +114,8 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
      */
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception)
     {
-        return ResponseUtils::jsonError(
-            'Ошибка авторизации пользователя',
-            $exception->getMessage(),
+        return new JsonResponse(
+            ResponseData::successArray('Ошибка авторизации пользователя'),
             Response::HTTP_UNAUTHORIZED
         );
     }

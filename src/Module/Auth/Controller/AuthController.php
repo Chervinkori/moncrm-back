@@ -2,8 +2,9 @@
 
 namespace App\Module\Auth\Controller;
 
-use App\Component\Response\ResponseData;
+use App\Component\Response\JsonResponse;
 use App\Component\Token\JWT;
+use App\Component\Validator\Validator;
 use App\Entity\User;
 use App\Entity\UserSession;
 use App\Hydrator\UserHydratorBuilder;
@@ -11,7 +12,6 @@ use App\Module\Auth\Service\UserSessionService;
 use App\Repository\UserRepository;
 use App\Repository\UserSessionRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -31,34 +31,36 @@ class AuthController extends AbstractController
      * @Route("/register", name="register", methods={"POST"})
      *
      * @param Request $request
+     * @param JsonResponse $jsonResponse
      * @param UserHydratorBuilder $userHydratorBuilder
      * @param ValidatorInterface $validator
-     * @param ResponseData $responseData
-     * @return JsonResponse
+     *
+     * @return Response
      */
     public function register(
         Request $request,
-        ResponseData $responseData,
+        JsonResponse $jsonResponse,
         UserHydratorBuilder $userHydratorBuilder,
         ValidatorInterface $validator
-    ): JsonResponse {
+    ): Response {
         $hydrator = $userHydratorBuilder->build();
         $user = $hydrator->hydrate($request->request->all(), new User());
 
         $errors = $validator->validate($user, null, 'common');
         if (count($errors) > 0) {
-            return new JsonResponse($responseData->addValidationErrors($errors)->toArray(), Response::HTTP_BAD_REQUEST);
+            return $jsonResponse->createResponseBuilder(false)->withValidationError($errors)->build();
+//            return new JsonResponse($responseData->addValidationErrors($errors)->toArray(), Response::HTTP_BAD_REQUEST);
         }
-
-        $em = $this->getDoctrine()->getManager();
-        $em->persist($user);
-        $em->flush();
-
-        // TODO: ЖЦ ?
-
-        return new JsonResponse(
-            $responseData->setData(['uuid' => $user->getUuid(), 'email' => $user->getEmail()])->toArray()
-        );
+//
+//        $em = $this->getDoctrine()->getManager();
+//        $em->persist($user);
+//        $em->flush();
+//
+//        // TODO: ЖЦ ?
+//
+//        return new JsonResponse(
+//            $responseData->setData(['uuid' => $user->getUuid(), 'email' => $user->getEmail()])->toArray()
+//        );
     }
 
     /**
