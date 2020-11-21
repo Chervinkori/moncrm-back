@@ -2,6 +2,7 @@
 
 namespace App\Module\Home\Controller;
 
+use App\Component\Response\JsonResponse;
 use App\Utility\ResponseUtils;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,8 +17,8 @@ class HomeController extends AbstractController
     /**
      * @Route("/", name="home")
      */
-    public function home(): Response
+    public function home(JsonResponse $response): Response
     {
-        return ResponseUtils::jsonSuccess('Home page :)');
+        return $response->success(null, 'Home page :)');
     }
 }

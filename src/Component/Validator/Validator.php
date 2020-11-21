@@ -12,6 +12,7 @@ use App\Component\Validator\Exceptions\NotStringException;
  * Компонент валидации
  *
  * Class Validator
+ *
  * @package App\Component\ResponseBuilder
  */
 final class Validator
@@ -48,7 +49,7 @@ final class Validator
      * Гарантирует, что $val имеет тип boolean.
      *
      * @param string $varName Ключ, используемый в случае исключения.
-     * @param mixed $value Переменная для проверки.
+     * @param mixed  $value   Переменная для проверки.
      *
      * @return void
      *
@@ -63,7 +64,7 @@ final class Validator
      * Гарантирует, что $val имеет тип integer.
      *
      * @param string $varName Ключ, используемый в случае исключения.
-     * @param mixed $value Переменная для проверки.
+     * @param mixed  $value   Переменная для проверки.
      *
      * @return void
      *
@@ -78,7 +79,7 @@ final class Validator
      * Гарантирует, что $val имеет тип array.
      *
      * @param string $varName Ключ, используемый в случае исключения.
-     * @param mixed $value Переменная для проверки.
+     * @param mixed  $value   Переменная для проверки.
      *
      * @return void
      *
@@ -93,7 +94,7 @@ final class Validator
      * Гарантирует, что данный $val имеет тип object.
      *
      * @param string $varName Ключ, используемый в случае исключения.
-     * @param mixed $value Переменная для проверки.
+     * @param mixed  $value   Переменная для проверки.
      *
      * @return void
      *
@@ -108,7 +109,7 @@ final class Validator
      * Гарантирует, что $val имеет тип string.
      *
      * @param string $varName Ключ, используемый в случае исключения.
-     * @param mixed $value Переменная для проверки.
+     * @param mixed  $value   Переменная для проверки.
      *
      * @return void
      *
@@ -123,9 +124,9 @@ final class Validator
      * Гарантирует вхождение $val в диапазон $min-$max.
      *
      * @param string $varName Ключ, используемый в случае исключения.
-     * @param mixed $value Переменная для проверки.
-     * @param int $min Минимальное допустимое значение (включительно).
-     * @param int $max Максимальное допустимое значение (включительно).
+     * @param mixed  $value   Переменная для проверки.
+     * @param int    $min     Минимальное допустимое значение (включительно).
+     * @param int    $max     Максимальное допустимое значение (включительно).
      *
      * @return void
      *
@@ -158,10 +159,10 @@ final class Validator
     /**
      * Гарантирует, что тип элемента $item, включен в список допустимых типов $allowed_types.
      *
-     * @param string $varName Ключ, используемый в случае исключения.
-     * @param mixed $value Переменная для проверки.
-     * @param array $allowedTypes Массив допустимых типов для $value, т.е. [Type::INTEGER].
-     * @param string $exClass Класс исключения.
+     * @param string $varName      Ключ, используемый в случае исключения.
+     * @param mixed  $value        Переменная для проверки.
+     * @param array  $allowedTypes Массив допустимых типов для $value, т.е. [Type::INTEGER].
+     * @param string $exClass      Класс исключения.
      *
      * @return void
      *
@@ -207,20 +208,34 @@ final class Validator
     }
 
     /**
-     * Гарантирует, что $obj является экземпляром указанного класса $cls.
+     * Гарантирует, что $obj является экземпляром хотя бы одного из классов $cls.
      *
-     * @param string $varName Ключ, используемый в случае исключения.
-     * @param object $obj Объект проверки.
-     * @param string $cls Класс для проверки.
+     * @param string       $varName Ключ, используемый в случае исключения.
+     * @param object       $obj     Объект проверки.
+     * @param string|array $cls     Класс для проверки.
      *
      * @throws \InvalidArgumentException
      */
-    public static function assertInstanceOf(string $varName, object $obj, string $cls): void
+    public static function assertInstanceOf(string $varName, object $obj, $cls): void
     {
-        if (!($obj instanceof $cls)) {
-            throw new \InvalidArgumentException(
-                \sprintf('Ожидается, что "%s" должен быть экземпляром "%s".', $varName, $cls)
-            );
+        self::assertIsType('cls', $cls, [Type::STRING, Type::ARRAY]);
+
+        $cls = is_array($cls) ? $cls : [$cls];
+
+        if (count(
+                array_filter(
+                    $cls,
+                    function ($cls) use ($obj) {
+                        return $obj instanceof $cls;
+                    }
+                )
+            ) == 0) {
+            if (count($cls) == 1) {
+                $msg = 'Ожидается, что "%s" должен быть экземпляром класса "%s", но является "%s".';
+            } else {
+                $msg = 'Ожидается, что "%s" должен быть экземпляром одного из классов: %s, но является "%s".';
+            }
+            throw new \InvalidArgumentException(\sprintf($msg, $varName, implode(', ', $cls), get_class($obj)));
         }
     }
 
@@ -228,12 +243,12 @@ final class Validator
      * Гарантирует, что в массиве присутствует ключ
      *
      * @param string $varName Ключ, используемый в случае исключения.
-     * @param array $array Массив в котором происходит поиск.
-     * @param string $key Искомый ключ.
+     * @param array  $array   Массив в котором происходит поиск.
+     * @param string $key     Искомый ключ.
      *
      * @throws \InvalidArgumentException
      */
-    public static function assertArrayKeyContains(string $varName, array $array, string $key): void
+    public static function assertKeyContains(string $varName, array $array, string $key): void
     {
         if (!\in_array($key, $array)) {
             throw new \InvalidArgumentException(
@@ -245,8 +260,8 @@ final class Validator
     /**
      * Гарантирует, что $val положительный (true)
      *
-     * @param string $varName
-     * @param bool $value
+     * @param string $varName Ключ, используемый в случае исключения.
+     * @param bool   $value   Переменная для проверки.
      *
      * @throws \InvalidArgumentException
      */
@@ -262,8 +277,8 @@ final class Validator
     /**
      * Гарантирует, что $val отрицательный (false)
      *
-     * @param string $varName
-     * @param bool $value
+     * @param string $varName Ключ, используемый в случае исключения.
+     * @param bool   $value   Переменная для проверки.
      *
      * @throws \InvalidArgumentException
      */
@@ -272,6 +287,40 @@ final class Validator
         if ($value !== false) {
             throw new \InvalidArgumentException(
                 \sprintf('Ожидается, что "%s" должен быть "%s".', $varName, 'false')
+            );
+        }
+    }
+
+    /**
+     * Гарантирует, что $val является null.
+     *
+     * @param string $varName Ключ, используемый в случае исключения.
+     * @param mixed  $value   Переменная для проверки.
+     *
+     * @throws \InvalidArgumentException
+     */
+    public static function assertIsNull(string $varName, $value): void
+    {
+        if ($value != null) {
+            throw new \InvalidArgumentException(
+                \sprintf('Ожидается, что "%s" должен быть "%s".', $varName, 'null')
+            );
+        }
+    }
+
+    /**
+     * Гарантирует, что $val не является null.
+     *
+     * @param string $varName Ключ, используемый в случае исключения.
+     * @param mixed  $value   Переменная для проверки.
+     *
+     * @throws \InvalidArgumentException
+     */
+    public static function assertIsNotNull(string $varName, $value): void
+    {
+        if ($value == null) {
+            throw new \InvalidArgumentException(
+                \sprintf('Ожидается, что "%s" должен быть отличным от "%s".', $varName, 'null')
             );
         }
     }

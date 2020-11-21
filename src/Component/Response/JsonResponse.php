@@ -4,10 +4,10 @@ namespace App\Component\Response;
 
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
-use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 /**
  * Class JsonResponse
+ *
  * @package App\Component\Response
  */
 class JsonResponse
@@ -28,6 +28,7 @@ class JsonResponse
      * Создаёт билдер ответа.
      *
      * @param bool $success Статус выполнения ($success = true|false).
+     *
      * @return JsonResponseBuilder
      */
     public function createResponseBuilder(bool $success = true): JsonResponseBuilder
@@ -38,47 +39,61 @@ class JsonResponse
     /**
      * Возвращает успешный объект ответа.
      *
-     * @param object|array|null $data Данные ответа.
-     * @param integer|null $http_code HTTP-код ответа.
-     * @param array|null $http_headers HTTP заголовки для включения в объект ответа.
+     * @param object|array|null $data        Данные ответа.
+     * @param string|null       $message     Дополнительное сообщение.
+     * @param array|null        $meta        Мета-данные
+     * @param array|object|null $debugData   Данные отладки. Передаются в ответ если kernel.isDebug = true.
+     * @param integer|null      $httpCode    HTTP-код ответа. По умолчанию 200.
+     * @param array|null        $httpHeaders HTTP заголовки для включения в объект ответа.
      *
      * @return Response
      */
     public function success(
         $data = null,
-        int $http_code = null,
-        array $http_headers = null
+        string $message = null,
+        array $meta = null,
+        $debugData = null,
+        int $httpCode = null,
+        array $httpHeaders = null
     ): Response {
         return JsonResponseBuilder::create($this->params)
             ->setSuccess(true)
             ->withData($data)
-            ->withHttpCode($http_code)
-            ->withHttpHeaders($http_headers)
+            ->withMessage($message)
+            ->withMeta($meta)
+            ->withDebugData($debugData)
+            ->withHttpCode($httpCode)
+            ->withHttpHeaders($httpHeaders)
             ->build();
     }
 
     /**
      * Возвращает объект ответа с ошибкой.
      *
-     * @param object|array|null $data Данные ответа.
-     * @param ConstraintViolationListInterface|null $validationErrors Ошибки валидации.
-     * @param int|null $http_code HTTP-код ответа.
-     * @param array|null $http_headers HTTP заголовки для включения в объект ответа.
+     * @param string|null       $message     Сообщение ошибки. Если $data является ConstraintViolationListInterface и
+     *                                       $message является null - сообщение об ошибки валидации по умолчанию
+     *                                       JsonResponseBuilder::MSG_VALIDATION_ERROR.
+     * @param mixed|null        $data        Данные ответа.
+     * @param array|object|null $debugData   Данные отладки. Передаются в ответ если kernel.isDebug = true.
+     * @param int|null          $httpCode    HTTP-код ответа. По умолчанию 400.
+     * @param array|null        $httpHeaders HTTP заголовки для включения в объект ответа.
      *
      * @return Response
      */
     public function error(
+        string $message = null,
         $data = null,
-        ConstraintViolationListInterface $validationErrors = null,
-        int $http_code = null,
-        array $http_headers = null
+        $debugData = null,
+        int $httpCode = null,
+        array $httpHeaders = null
     ): Response {
         return JsonResponseBuilder::create($this->params)
             ->setSuccess(false)
+            ->withMessage($message)
             ->withData($data)
-            ->withValidationError($validationErrors)
-            ->withHttpCode($http_code)
-            ->withHttpHeaders($http_headers)
+            ->withDebugData($debugData)
+            ->withHttpCode($httpCode)
+            ->withHttpHeaders($httpHeaders)
             ->build();
     }
 }

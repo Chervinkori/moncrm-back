@@ -4,7 +4,6 @@ namespace App\Module\Auth\Controller;
 
 use App\Component\Response\JsonResponse;
 use App\Component\Token\JWT;
-use App\Component\Validator\Validator;
 use App\Entity\User;
 use App\Entity\UserSession;
 use App\Hydrator\UserHydratorBuilder;
@@ -23,6 +22,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * @Route("/auth", name="auth_")
  *
  * Class AuthController
+ *
  * @package App\Controller
  */
 class AuthController extends AbstractController
@@ -30,10 +30,10 @@ class AuthController extends AbstractController
     /**
      * @Route("/register", name="register", methods={"POST"})
      *
-     * @param Request $request
-     * @param JsonResponse $jsonResponse
+     * @param Request             $request
+     * @param JsonResponse        $jsonResponse
      * @param UserHydratorBuilder $userHydratorBuilder
-     * @param ValidatorInterface $validator
+     * @param ValidatorInterface  $validator
      *
      * @return Response
      */
@@ -47,51 +47,52 @@ class AuthController extends AbstractController
         $user = $hydrator->hydrate($request->request->all(), new User());
 
         $errors = $validator->validate($user, null, 'common');
-        if (count($errors) > 0) {
-            return $jsonResponse->createResponseBuilder(false)->withValidationError($errors)->build();
-//            return new JsonResponse($responseData->addValidationErrors($errors)->toArray(), Response::HTTP_BAD_REQUEST);
+        if ($errors->count()) {
+            return $jsonResponse->error(null, $errors, $request);
         }
-//
-//        $em = $this->getDoctrine()->getManager();
-//        $em->persist($user);
-//        $em->flush();
-//
-//        // TODO: ЖЦ ?
-//
-//        return new JsonResponse(
-//            $responseData->setData(['uuid' => $user->getUuid(), 'email' => $user->getEmail()])->toArray()
-//        );
+
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($user);
+        $em->flush();
+
+        // TODO: ЖЦ ?
+
+        return $jsonResponse->success(
+            ['uuid' => $user->getUuid(), 'email' => $user->getEmail()],
+            null,
+            null,
+            $request
+        );
     }
 
     /**
      * @IsGranted("IS_ANONYMOUS")
      * @Route("/login", name="login", methods={"POST"})
      *
-     * @param Request $request
-     * @param ResponseData $responseData
-     * @param UserRepository $userRepository
+     * @param Request                      $request
+     * @param JsonResponse                 $jsonResponse
+     * @param UserRepository               $userRepository
      * @param UserPasswordEncoderInterface $encoder
-     * @param UserSessionService $userSessionService
-     * @param UserSessionRepository $userSessionRepository
-     * @return JsonResponse
+     * @param UserSessionService           $userSessionService
+     * @param UserSessionRepository        $userSessionRepository
+     *
+     * @return Response
+     *
      * @throws \Exception
      */
     public function login(
         Request $request,
-        ResponseData $responseData,
+        JsonResponse $jsonResponse,
         UserRepository $userRepository,
         UserPasswordEncoderInterface $encoder,
         UserSessionService $userSessionService,
         UserSessionRepository $userSessionRepository
-    ): JsonResponse {
+    ): Response {
         // Получаем пользователя
         $user = $userRepository->findOneBy(['email' => $request->get('email')]);
         // Проверяем пользователя и валидность пароля
         if (!$user || !$encoder->isPasswordValid($user, $request->get('password'))) {
-            return new JsonResponse(
-                $responseData->addError('Неверный логин или пароль')->toArray(),
-                Response::HTTP_BAD_REQUEST
-            );
+            return $jsonResponse->error('Неверный логин или пароль', null, $request);
         }
 
         // Удаляем просроченные сессии пользователя
@@ -101,7 +102,7 @@ class AuthController extends AbstractController
         $currentUserSessions = $userSessionRepository->getActiveSessions($user, $request->getClientIp());
         // Удаляем текущие сессии (чтобы не дублировать)
         $userSessionService->deleteSessions($currentUserSessions);
-        // Создаем сессию пользователя
+        // Создаём сессию пользователя
         $userSession = $userSessionService->createUserSession($user, $request->getClientIp());
 
         // Генерируем токен доступа
@@ -111,14 +112,15 @@ class AuthController extends AbstractController
             $this->getParameter('access_token_lifetime')
         );
 
-        // Создаем куку для рефреш токена (сессии)
+        // Создаём куку для рефреш токена (сессии)
         $userSessionCookie = $userSessionService->createUserSessionCookie($userSession);
 
-        return new JsonResponse(
-            $responseData->setData(
-                ['access_token' => $accessToken, 'refresh_token' => $userSession->getUuid(), 'token_type' => 'bearer']
-            )->toArray(),
-            Response::HTTP_OK,
+        return $jsonResponse->success(
+            ['access_token' => $accessToken, 'refresh_token' => $userSession->getUuid(), 'token_type' => 'bearer'],
+            null,
+            null,
+            $request,
+            null,
             ['set-cookie' => [$userSessionCookie]]
         );
     }
@@ -126,24 +128,23 @@ class AuthController extends AbstractController
     /**
      * @Route("/refresh-token", name="refresh-token", methods={"POST"})
      *
-     * @param Request $request
-     * @param ResponseData $responseData
+     * @param Request               $request
+     * @param JsonResponse          $jsonResponse
      * @param UserSessionRepository $userSessionRepository
-     * @param UserSessionService $userSessionService
-     * @return JsonResponse
+     * @param UserSessionService    $userSessionService
+     *
+     * @return Response
+     *
      * @throws \Exception
      */
     public function refreshToken(
         Request $request,
-        ResponseData $responseData,
+        JsonResponse $jsonResponse,
         UserSessionRepository $userSessionRepository,
         UserSessionService $userSessionService
-    ): JsonResponse {
+    ): Response {
         if (!$request->cookies->has('refresh_token')) {
-            return new JsonResponse(
-                $responseData->addError('Отсутствует токен обновления доступа')->toArray(),
-                Response::HTTP_BAD_REQUEST
-            );
+            return $jsonResponse->error('Отсутствует токен обновления доступа');
         }
 
         // Получаем из кук рефреш токен
@@ -152,9 +153,12 @@ class AuthController extends AbstractController
         /** @var UserSession $userSession */
         $userSession = $userSessionRepository->find($refreshToken);
         if (!$userSession) {
-            return new JsonResponse(
-                $responseData->addError('Сессия пользователя не найдена')->toArray(),
-                Response::HTTP_BAD_REQUEST
+            return $jsonResponse->error(
+                'Сессия пользователя не найдена',
+                null,
+                $request,
+                null,
+                ['refreshToken' => $refreshToken]
             );
         }
 
@@ -167,10 +171,7 @@ class AuthController extends AbstractController
             $em->flush();
 
             // TODO: логирование?
-            return new JsonResponse(
-                $responseData->addError('Сессия пользователя не найдена')->toArray(),
-                Response::HTTP_BAD_REQUEST
-            );
+            return $jsonResponse->error('Сессия пользователя не найдена', null, $request);
         }
 
         // Получаем пользователя из сессии, т.к. дальше сессия удаляется
@@ -188,14 +189,15 @@ class AuthController extends AbstractController
             $this->getParameter('access_token_lifetime')
         );
 
-        // Создаем куку для рефреш токена (сессии)
+        // Создаём куку для рефреш токена (сессии)
         $userSessionCookie = $userSessionService->createUserSessionCookie($userSession);
 
-        return new JsonResponse(
-            $responseData->setData(
-                ['access_token' => $accessToken, 'refresh_token' => $userSession->getUuid(), 'token_type' => 'bearer']
-            )->toArray(),
-            Response::HTTP_OK,
+        return $jsonResponse->success(
+            ['access_token' => $accessToken, 'refresh_token' => $userSession->getUuid(), 'token_type' => 'bearer'],
+            null,
+            null,
+            $request,
+            null,
             ['set-cookie' => [$userSessionCookie]]
         );
     }

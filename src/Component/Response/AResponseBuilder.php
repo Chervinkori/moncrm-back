@@ -2,20 +2,37 @@
 
 namespace App\Component\Response;
 
+use App\Component\Validator\Type;
+use App\Component\Validator\Validator;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Class AResponseBuilder
+ *
  * @package App\Component\Response
  */
 abstract class AResponseBuilder
 {
+    /** @var bool */
+    protected $success = null;
+
+    /** @var int|null */
+    protected $httpCode = null;
+
+    /** @var array */
+    protected $httpHeaders = [];
+
+    // -----------------------------------------------------------------------------------------------------------
+
     /**
      * Дополнительные параметры сборщика.
      *
      * @var array
      */
     protected $params = [];
+
+    // -----------------------------------------------------------------------------------------------------------
 
     /**
      * Код HTTP по умолчанию для использования с успешными ответами
@@ -31,12 +48,16 @@ abstract class AResponseBuilder
      */
     public const DEFAULT_HTTP_CODE_ERROR = Response::HTTP_BAD_REQUEST;
 
+    // -----------------------------------------------------------------------------------------------------------
+
     /**
      * Сообщения по умолчанию
      */
 
     /** @var string */
     public const MSG_VALIDATION_ERROR = 'Ошибка валидации данных';
+
+    // -----------------------------------------------------------------------------------------------------------
 
     /**
      * Ключи по умолчанию
@@ -51,8 +72,6 @@ abstract class AResponseBuilder
     /** @var string */
     public const KEY_DATA = 'data';
     /** @var string */
-    public const KEY_VALIDATION_ERROR = 'data';
-    /** @var string */
     public const KEY_DEBUG = 'debug';
     /** @var string */
     public const KEY_FIELD = 'field';
@@ -60,14 +79,22 @@ abstract class AResponseBuilder
     public const KEY_VALUE = 'value';
 
     /** @var string */
-    public const KEY_TRACE = 'trace';
+    public const KEY_TYPE = 'type';
     /** @var string */
-    public const KEY_CLASS = 'class';
+    public const KEY_TRACE = 'trace';
     /** @var string */
     public const KEY_FILE = 'file';
     /** @var string */
     public const KEY_LINE = 'line';
 
+    /** @var string */
+    public const KEY_BODY = 'body';
+    /** @var string */
+    public const KEY_COOKIES = 'cookies';
+    /** @var string */
+    public const KEY_HEADERS = 'headers';
+
+    // -----------------------------------------------------------------------------------------------------------
 
     /**
      * Приватный конструктор.
@@ -80,11 +107,51 @@ abstract class AResponseBuilder
         $this->params = $params;
     }
 
+    // -----------------------------------------------------------------------------------------------------------
+
     /**
-     * @param array $params
-     * @return mixed
+     * Устанавливаем статус выполнения.
+     *
+     * @param bool $success Статус выполнения ($success = true|false).
+     *
+     * @return $this
      */
-    abstract public static function create(array $params = []);
+    public function setSuccess(bool $success = true): self
+    {
+        Validator::assertIsBool('success', $success);
+
+        $this->success = $success;
+
+        return $this;
+    }
+
+    /**
+     * @param int|null $httpCode
+     *
+     * @return $this
+     */
+    public function withHttpCode(int $httpCode = null): self
+    {
+        Validator::assertIsType('httpCode', $httpCode, [Type::INTEGER, Type::NULL]);
+
+        $this->httpCode = $httpCode;
+
+        return $this;
+    }
+
+    /**
+     * @param array|null $httpHeaders
+     *
+     * @return $this
+     */
+    public function withHttpHeaders(array $httpHeaders = null): self
+    {
+        Validator::assertIsType('httpHeaders', $httpHeaders, [Type::ARRAY, Type::NULL]);
+
+        $this->httpHeaders = $httpHeaders ?? [];
+
+        return $this;
+    }
 
     /**
      * Строит и возвращает готовый объект ответа. Поскольку при построении параметры не изменяются, безопасно
@@ -93,5 +160,57 @@ abstract class AResponseBuilder
      *
      * @return Response
      */
-    abstract public function build(): Response;
+    public function build(): Response
+    {
+        Validator::assertIsBool('success', $this->success);
+
+        if ($this->success) {
+            $httpCode = $this->httpCode ?? self::DEFAULT_HTTP_CODE_OK;
+            Validator::assertOkHttpCode($httpCode);
+        } else {
+            $httpCode = $this->httpCode ?? self::DEFAULT_HTTP_CODE_ERROR;
+            Validator::assertErrorHttpCode($httpCode);
+        }
+
+        // Формируем данные для ответа
+        $data = $this->buildResponseData();
+        // Валидируем данные ответа
+        $this->validationResponseData($data);
+
+        return new JsonResponse(
+            $data,
+            $httpCode,
+            $this->httpHeaders
+        );
+    }
+
+    // -----------------------------------------------------------------------------------------------------------
+
+    /**
+     * Создаёт экземпляр строителя ответа.
+     *
+     * @param array $params
+     *
+     * @return mixed
+     */
+    abstract public static function create(array $params = []);
+
+    /**
+     * Создаёт стандартизированный массив ответов API. Это окончательный метод, вызываемый во всем конвейере, прежде
+     * чем мы вернём окончательный JSON обратно клиенту. Если вы хотите манипулировать своим ответом, это место для
+     * этого. Если APP_DEBUG установлено значение true, поле code _ hex будет добавлено в отчет JSON для упрощения
+     * отладки вручную.
+     *
+     * @return array Готовые данные для ответа.
+     */
+    abstract protected function buildResponseData(): array;
+
+    /**
+     * Валидация данных ответа. В случае ошибки вернуть исключение.
+     *
+     * @param array $data Данные ответа для валидации.
+     *
+     * @return mixed
+     */
+    abstract protected function validationResponseData(array $data);
 }

@@ -4,8 +4,7 @@ namespace App\Component\Response;
 
 use App\Component\Validator\Type;
 use App\Component\Validator\Validator;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
@@ -13,79 +12,24 @@ use Symfony\Component\Validator\ConstraintViolationListInterface;
  * Сборщик ответа.
  *
  * Class JsonResponseBuilder
+ *
  * @package App\Component\Response
  */
 class JsonResponseBuilder extends AResponseBuilder
 {
-    /** @var bool */
-    protected $success = null;
-
-    /** @var int|null */
-    protected $httpCode = null;
-
     /** @var array|null */
     protected $meta = null;
 
     /** @var mixed */
     protected $data = null;
 
-    /** @var ConstraintViolationListInterface|null */
-    protected $validationErrors = null;
-
     /** @var string */
     protected $message = null;
 
-    /** @var array */
-    protected $httpHeaders = [];
-
-    /** @var array */
+    /** @var array|null */
     protected $debugData = [];
 
     // -----------------------------------------------------------------------------------------------------------
-
-    /**
-     * Создаёт экземпляр билдера.
-     *
-     * @param array $params Дополнительные параметры сборщика.
-     * @return static
-     */
-    public static function create(array $params = []): self
-    {
-        // Проверяем обязательный параметр 'debug'
-        Validator::assertArrayKeyContains('params', $params, 'debug');
-        Validator::assertIsBool('params.debug', $params['debug']);
-
-        return new static($params);
-    }
-
-    /**
-     * Устанавливаем статус выполнения.
-     *
-     * @param bool $success Статус выполнения ($success = true|false).
-     * @return $this
-     */
-    public function setSuccess(bool $success = true): self
-    {
-        Validator::assertIsBool('success', $success);
-
-        $this->success = $success;
-
-        return $this;
-    }
-
-    /**
-     * @param int|null $httpCode
-     *
-     * @return $this
-     */
-    public function withHttpCode(int $httpCode = null): self
-    {
-        Validator::assertIsType('httpCode', $httpCode, [Type::INTEGER, Type::NULL]);
-
-        $this->httpCode = $httpCode;
-
-        return $this;
-    }
 
     /**
      * @param array|null $meta
@@ -116,9 +60,18 @@ class JsonResponseBuilder extends AResponseBuilder
                 Type::BOOLEAN,
                 Type::INTEGER,
                 Type::STRING,
+                Type::OBJECT,
                 Type::NULL,
             ]
         );
+
+        // Ограничения для объекта
+        if (gettype($data) === Type::OBJECT) {
+            // Разрешен только объект с ошибками валидации
+            Validator::assertInstanceOf('data', $data, ConstraintViolationListInterface::class);
+            // Только для отрицательного ответа
+            Validator::assertIsFalse('success', $this->success);
+        }
 
         $this->data = $data;
 
@@ -126,30 +79,25 @@ class JsonResponseBuilder extends AResponseBuilder
     }
 
     /**
-     * @param ConstraintViolationListInterface|null $validationErrors
-     * @return $this
-     */
-    public function withValidationError(ConstraintViolationListInterface $validationErrors = null): self
-    {
-        Validator::assertIsType('validationErrors', $validationErrors, [Type::OBJECT, Type::NULL]);
-        Validator::assertIsBool('success', $this->success);
-
-        // Только для отрицательного ответа
-        Validator::assertIsFalse('success', $this->success);
-
-        $this->validationErrors = $validationErrors;
-
-        return $this;
-    }
-
-    /**
-     * @param array|null $debugData
+     * @param array|object|null $debugData
      *
      * @return $this
      */
-    public function withDebugData(array $debugData = null): self
+    public function withDebugData($debugData = null): self
     {
-        Validator::assertIsType('debugData', $debugData, [Type::ARRAY, Type::NULL]);
+        Validator::assertIsType('debugData', $debugData, [Type::ARRAY, Type::OBJECT, Type::NULL]);
+
+        if (!is_array($debugData)) {
+            $debugData = [$debugData];
+        }
+
+        foreach ($debugData as $data) {
+            // Ограничения для объекта
+            if (gettype($data) === Type::OBJECT) {
+                // Разрешен только объект исключений или объект запроса
+                Validator::assertInstanceOf('debugData', $data, [\Exception::class, Request::class]);
+            }
+        }
 
         $this->debugData = $debugData;
 
@@ -171,80 +119,130 @@ class JsonResponseBuilder extends AResponseBuilder
     }
 
     /**
-     * @param array|null $httpHeaders
-     *
-     * @return $this
+     * @return string|null
      */
-    public function withHttpHeaders(array $httpHeaders = null): self
+    private function getMessage()
     {
-        Validator::assertIsType('http_headers', $httpHeaders, [Type::ARRAY, Type::NULL]);
-
-        $this->httpHeaders = $httpHeaders ?? [];
-
-        return $this;
-    }
-
-    /**
-     * @return Response
-     */
-    public function build(): Response
-    {
-        if ($this->success) {
-            $httpCode = $this->httpCode ?? self::DEFAULT_HTTP_CODE_OK;
-            Validator::assertOkHttpCode($httpCode);
+        $message = null;
+        if ($this->data instanceof ConstraintViolationListInterface) {
+            $message = self::MSG_VALIDATION_ERROR;
         } else {
-            $httpCode = $this->http_code ?? self::DEFAULT_HTTP_CODE_ERROR;
-            Validator::assertErrorHttpCode($httpCode);
+            $message = $this->message;
         }
 
-        return new JsonResponse(
-            $this->buildResponseData(),
-            $httpCode,
-            $this->httpHeaders
-        );
+        return $message;
     }
 
     /**
-     * Создаёт стандартизированный массив ответов API. Это окончательный метод, вызываемый во всем конвейере, прежде
-     * чем мы вернём окончательный JSON обратно клиенту. Если вы хотите манипулировать своим ответом, это место для
-     * этого. Если APP_DEBUG установлено значение true, поле code _ hex будет добавлено в отчет JSON для упрощения
-     * отладки вручную.
+     * @return array|null
+     */
+    private function getData()
+    {
+        $data = null;
+        if ($this->data instanceof ConstraintViolationListInterface) {
+            /** @var ConstraintViolation $error */
+            foreach ($this->data as $error) {
+                // Заполняем ошибками валидации
+                $data[] = [
+                    self::KEY_FIELD => $error->getPropertyPath(),
+                    self::KEY_VALUE => $error->getInvalidValue(),
+                    self::KEY_MESSAGE => $error->getMessage(),
+                ];
+            }
+        } else {
+            $data = $this->data;
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return array
+     */
+    private function getDebugData()
+    {
+        $debugData = null;
+
+        foreach ($this->debugData as $key => $data) {
+            if ($data instanceof \Exception) {
+                $exp = $data;
+                do {
+                    $debugData['exception'][] = [
+                        self::KEY_TYPE => get_class($exp),
+                        self::KEY_MESSAGE => $exp->getMessage(),
+                        self::KEY_FILE => $exp->getFile(),
+                        self::KEY_LINE => $exp->getLine(),
+                        self::KEY_TRACE => $exp->getTraceAsString()
+                    ];
+                } while ($exp = $exp->getPrevious());
+            } elseif ($data instanceof Request) {
+                $debugData['request'] = [
+                    self::KEY_BODY => $data->request->all(),
+                    self::KEY_COOKIES => $data->cookies->all(),
+                    self::KEY_HEADERS => $data->headers->all(),
+                ];
+            } else {
+                if (!empty($data)) {
+                    $debugData[$key] = $data;
+                }
+            }
+        }
+
+        return $debugData;
+    }
+
+    // -----------------------------------------------------------------------------------------------------------
+
+    /**
+     * Создаёт экземпляр билдера.
      *
-     * @return array Готовые данные для ответа.
+     * @param array $params Дополнительные параметры сборщика.
+     *
+     * @return static
+     */
+    public static function create(array $params = []): self
+    {
+        // Проверяем обязательный параметр 'debug'
+        Validator::assertKeyContains('params', $params, 'debug');
+        Validator::assertIsBool('params.debug', $params['debug']);
+
+        return new static($params);
+    }
+
+    /**
+     * @return array
      */
     protected function buildResponseData(): array
     {
         $response = [
             self::KEY_SUCCESS => $this->success,
             self::KEY_META => $this->meta,
-            self::KEY_MESSAGE => $this->message,
-            self::KEY_DATA => $this->data,
+            self::KEY_MESSAGE => $this->getMessage(),
+            self::KEY_DATA => $this->getData()
         ];
 
-        // Ошибки валидации
-        if ($this->validationErrors != null && $this->validationErrors->count() != 0) {
-            // Если не установлено сообщение - выставляем по умолчанию
-            $response[self::KEY_MESSAGE] = $response[self::KEY_MESSAGE] ?? self::MSG_VALIDATION_ERROR;
-
-            // Разбираем ошибки валидации
-            /** @var ConstraintViolation $error */
-            foreach ($this->validationErrors as $error) {
-                // Преобразуем в массив (предосторожность)
-                $response[self::KEY_VALIDATION_ERROR] = (array)$response[self::KEY_VALIDATION_ERROR];
-                // Заполняем ошибками валидации
-                $response[self::KEY_VALIDATION_ERROR][] = [
-                    self::KEY_FIELD => $error->getPropertyPath(),
-                    self::KEY_VALUE => $error->getInvalidValue(),
-                    self::KEY_MESSAGE => $error->getMessage(),
-                ];
-            }
-        }
-
+        // Если включен режим отладки
         if ($this->params['debug']) {
-            $response[self::KEY_DEBUG] = $this->debugData;
+            $response[self::KEY_DEBUG] = $this->getDebugData();
         }
 
         return $response;
     }
 
+    /**
+     * @param array $data
+     *
+     * @return mixed|void
+     */
+    protected function validationResponseData(array $data)
+    {
+        Validator::assertIsBool('success', $this->success);
+
+        if ($data[self::KEY_SUCCESS]) {
+            // TODO
+            Validator::assertIsNotNull('data', $data[self::KEY_DATA]);
+        } else {
+            Validator::assertIsNotNull('message', $data[self::KEY_MESSAGE]);
+        }
+    }
 }

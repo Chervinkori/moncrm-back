@@ -2,11 +2,11 @@
 
 namespace App\Module\Auth\Security;
 
-use App\Component\Response\ResponseData;
+use App\Component\Response\JsonResponse;
 use App\Component\Token\JWT;
+use App\Entity\User;
 use App\Repository\UserRepository;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -17,6 +17,7 @@ use Symfony\Component\Security\Guard\AbstractGuardAuthenticator;
 
 /**
  * Class JWTAuthenticator
+ *
  * @package App\Module\Auth\Security
  */
 class JWTAuthenticator extends AbstractGuardAuthenticator
@@ -32,21 +33,31 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
     private $params;
 
     /**
+     * @var JsonResponse
+     */
+    private $jsonResponse;
+
+    /**
      * JWTAuthenticator constructor.
      *
-     * @param UserRepository $userRepository
+     * @param UserRepository        $userRepository
      * @param ContainerBagInterface $params
+     * @param JsonResponse          $jsonResponse
      */
     public function __construct(
         UserRepository $userRepository,
-        ContainerBagInterface $params
+        ContainerBagInterface $params,
+        JsonResponse $jsonResponse
+
     ) {
         $this->userRepository = $userRepository;
         $this->params = $params;
+        $this->jsonResponse = $jsonResponse;
     }
 
     /**
      * @param Request $request
+     *
      * @return bool
      */
     public function supports(Request $request)
@@ -57,6 +68,7 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
 
     /**
      * @param Request $request
+     *
      * @return array|mixed
      */
     public function getCredentials(Request $request)
@@ -79,9 +91,10 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
     }
 
     /**
-     * @param mixed $credentials
+     * @param mixed                 $credentials
      * @param UserProviderInterface $userProvider
-     * @return \App\Entity\User|UserInterface|null
+     *
+     * @return User|UserInterface|null
      */
     public function getUser($credentials, UserProviderInterface $userProvider)
     {
@@ -96,8 +109,9 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
     /**
      * Проверка токена доступа в getCredentials().
      *
-     * @param mixed $credentials
+     * @param mixed         $credentials
      * @param UserInterface $user
+     *
      * @return bool
      */
     public function checkCredentials($credentials, UserInterface $user)
@@ -108,14 +122,17 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
     /**
      * Ошибка авторизации.
      *
-     * @param Request $request
+     * @param Request                 $request
      * @param AuthenticationException $exception
-     * @return \Symfony\Component\HttpFoundation\JsonResponse|Response|null
+     *
+     * @return Response|null
      */
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception)
     {
-        return new JsonResponse(
-            ResponseData::successArray('Ошибка авторизации пользователя'),
+        return $this->jsonResponse->error(
+            'Ошибка авторизации пользователя',
+            null,
+            [$request, $exception],
             Response::HTTP_UNAUTHORIZED
         );
     }
@@ -123,10 +140,11 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
     /**
      * Успешная авторизация.
      *
-     * @param Request $request
+     * @param Request        $request
      * @param TokenInterface $token
-     * @param string $providerKey
-     * @return \Symfony\Component\HttpFoundation\Response|null
+     * @param string         $providerKey
+     *
+     * @return null
      */
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $providerKey)
     {
@@ -136,15 +154,17 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
     /**
      * Вызывается, когда анонимный пользователь запрашивает доступ к закрытому ресурсу (требующему аутентификации).
      *
-     * @param Request $request
+     * @param Request                      $request
      * @param AuthenticationException|null $authException
-     * @return \Symfony\Component\HttpFoundation\JsonResponse|\Symfony\Component\HttpFoundation\Response
+     *
+     * @return Response
      */
     public function start(Request $request, AuthenticationException $authException = null)
     {
-        return ResponseUtils::jsonError(
-            'Доступ запрещен для неавторизованных пользователей',
-            $authException->getMessage(),
+        return $this->jsonResponse->error(
+            'Доступ запрещён для неавторизованных пользователей',
+            null,
+            [$request, $authException],
             Response::HTTP_UNAUTHORIZED
         );
     }
