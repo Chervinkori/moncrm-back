@@ -6,6 +6,7 @@ use Laminas\Hydrator\Strategy\StrategyInterface;
 
 /**
  * Class FirstUppercaseStrategy
+ *
  * @package App\Hydrator\Strategy
  */
 class FirstUppercaseStrategy implements StrategyInterface

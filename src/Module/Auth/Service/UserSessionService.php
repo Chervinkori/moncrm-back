@@ -28,9 +28,10 @@ class UserSessionService
 
     /**
      * UserSessionService constructor.
+     *
      * @param EntityManagerInterface $entityManager
-     * @param UserSessionRepository $userSessionRepository
-     * @param ContainerBagInterface $params
+     * @param UserSessionRepository  $userSessionRepository
+     * @param ContainerBagInterface  $params
      */
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -79,9 +80,10 @@ class UserSessionService
     /**
      * Создает сессию пользователя
      *
-     * @param User $user
-     * @param string $clientIp
+     * @param User        $user
+     * @param string      $clientIp
      * @param string|null $fingerprint
+     *
      * @return UserSession
      * @throws \Exception
      */
@@ -104,6 +106,7 @@ class UserSessionService
      * Создает куку с refresh_token для UserSession
      *
      * @param UserSession $userSession
+     *
      * @return Cookie
      */
     public function createUserSessionCookie(UserSession $userSession): Cookie

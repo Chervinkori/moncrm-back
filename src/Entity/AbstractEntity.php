@@ -9,6 +9,7 @@ use Ramsey\Uuid\Uuid;
  * Абстрактная базовая сущность
  *
  * Class CoreEntity
+ *
  * @package App\Entity
  *
  * @ORM\MappedSuperclass
@@ -44,6 +45,7 @@ abstract class AbstractEntity
 
     /**
      * @param string $uuid
+     *
      * @return AbstractEntity
      */
     public function setUuid(string $uuid): self
@@ -63,6 +65,7 @@ abstract class AbstractEntity
 
     /**
      * @param \DateTime $createdAt
+     *
      * @return AbstractEntity
      */
     public function setCreatedAt(\DateTime $createdAt): self
@@ -82,6 +85,7 @@ abstract class AbstractEntity
 
     /**
      * @param \DateTime $updatedAt
+     *
      * @return AbstractEntity
      */
     public function setUpdatedAt(\DateTime $updatedAt): self

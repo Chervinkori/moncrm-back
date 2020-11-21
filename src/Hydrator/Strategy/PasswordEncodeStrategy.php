@@ -8,6 +8,7 @@ use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
 /**
  * Class PasswordEncodeStrategy
+ *
  * @package App\Modules\Auth\Hydrator\Strategy
  */
 class PasswordEncodeStrategy implements StrategyInterface
@@ -16,6 +17,7 @@ class PasswordEncodeStrategy implements StrategyInterface
 
     /**
      * @required
+     *
      * @param UserPasswordEncoderInterface $encoder
      */
     public function __construct(UserPasswordEncoderInterface $encoder)

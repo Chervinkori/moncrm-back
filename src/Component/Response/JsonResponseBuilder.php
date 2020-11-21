@@ -240,7 +240,7 @@ class JsonResponseBuilder extends AResponseBuilder
 
         if ($data[self::KEY_SUCCESS]) {
             // TODO
-            Validator::assertIsNotNull('data', $data[self::KEY_DATA]);
+            Validator::assertAtLeastOneIsNotNull([$data[self::KEY_DATA], $data[self::KEY_MESSAGE]]);
         } else {
             Validator::assertIsNotNull('message', $data[self::KEY_MESSAGE]);
         }

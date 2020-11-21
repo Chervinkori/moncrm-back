@@ -26,6 +26,7 @@ class UserSessionRepository extends ServiceEntityRepository
      *
      * @param \DateTime $exp
      * @param User|null $user
+     *
      * @return UserSession[]
      */
     public function getExpireSessions(\DateTime $exp, User $user = null): array
@@ -46,9 +47,10 @@ class UserSessionRepository extends ServiceEntityRepository
      * Если передали пользователя - активные сессии пользователя.
      * Доп. параметры для условия.
      *
-     * @param User|null $user
+     * @param User|null   $user
      * @param string|null $ip
      * @param string|null $fingerprint
+     *
      * @return int|mixed|string
      */
     public function getActiveSessions(User $user = null, string $ip = null, string $fingerprint = null)

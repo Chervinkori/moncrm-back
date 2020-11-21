@@ -16,12 +16,14 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  * Пользователь системы
  *
  * Class User
+ *
  * @package App\Entity
  *
  * @ORM\Entity(repositoryClass=UserRepository::class)
  * @ORM\Table(name="`user`")
  *
- * @UniqueEntity(fields="email", message="Пользователь с таким адресом электронной почты уже существует.", groups={"common"})
+ * @UniqueEntity(fields="email", message="Пользователь с таким адресом электронной почты уже существует.",
+ *                               groups={"common"})
  */
 class User extends AbstractEntity implements UserInterface
 {
@@ -211,6 +213,7 @@ class User extends AbstractEntity implements UserInterface
 
     /**
      * @param $sessions
+     *
      * @return $this
      */
     public function setSessions($sessions): self

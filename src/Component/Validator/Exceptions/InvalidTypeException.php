@@ -4,6 +4,7 @@ namespace App\Component\Validator\Exceptions;
 
 /**
  * Class InvalidTypeException
+ *
  * @package App\Component\Validator\Exceptions
  */
 class InvalidTypeException extends \Exception implements InvalidTypeExceptionContract
@@ -11,9 +12,9 @@ class InvalidTypeException extends \Exception implements InvalidTypeExceptionCon
     /**
      * NotAnTypeBaseException constructor.
      *
-     * @param string $varName Ключ, используемый в случае исключения.
+     * @param string       $varName      Ключ, используемый в случае исключения.
      * @param string|array $allowedTypes Массив допустимых типов [Type::*].
-     * @param string $type Текущий тип значения $value
+     * @param string       $type         Текущий тип значения $value
      */
     public function __construct(string $varName, string $type, array $allowedTypes)
     {

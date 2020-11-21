@@ -10,6 +10,7 @@ use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
  * Строитель гидратора пользователя
  *
  * Class UserBuilder
+ *
  * @package App\Hydrator
  */
 class UserHydratorBuilder extends AbstractHydratorBuilder
@@ -21,6 +22,7 @@ class UserHydratorBuilder extends AbstractHydratorBuilder
 
     /**
      * UserBuilder constructor.
+     *
      * @param UserPasswordEncoderInterface $encoder
      */
     public function __construct(UserPasswordEncoderInterface $encoder)

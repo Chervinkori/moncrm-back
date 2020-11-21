@@ -8,6 +8,7 @@ use Ramsey\Uuid\Doctrine\UuidGenerator;
 
 /**
  * Class UserSession
+ *
  * @package App\Entity
  *
  * @ORM\Entity(repositoryClass=UserSessionRepository::class)

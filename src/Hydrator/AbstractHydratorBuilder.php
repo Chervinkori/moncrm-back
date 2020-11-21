@@ -10,6 +10,7 @@ use Symfony\Component\VarExporter\Exception\ClassNotFoundException;
  * Абстрактные строитель гидратора
  *
  * Class AbstractBuilder
+ *
  * @package App\Hydrator
  */
 abstract class AbstractHydratorBuilder
@@ -23,6 +24,7 @@ abstract class AbstractHydratorBuilder
      * Получить гидратор.
      *
      * @param string $hydratorClass Класс гидратора (по умолчанию ClassMethodsHydrator)
+     *
      * @return AbstractHydrator
      */
     public function build(string $hydratorClass = ClassMethodsHydrator::class): AbstractHydrator

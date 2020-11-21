@@ -324,4 +324,43 @@ final class Validator
             );
         }
     }
+
+
+    /**
+     * Гарантирует, что хотя бы один из параметров является null.
+     *
+     * @param array $values Проверяемые параметры.
+     */
+    public static function assertAtLeastOneIsNull(array $values)
+    {
+        if (count(
+                array_filter(
+                    $values,
+                    function ($value) {
+                        return $value == null;
+                    }
+                )
+            ) == 0) {
+            throw new \InvalidArgumentException('Ожидается, что один из параметров должен быть "null".');
+        }
+    }
+
+    /**
+     * Гарантирует, что хотя бы один из параметров не является null.
+     *
+     * @param array $values Проверяемые параметры.
+     */
+    public static function assertAtLeastOneIsNotNull(array $values)
+    {
+        if (count(
+                array_filter(
+                    $values,
+                    function ($value) {
+                        return $value != null;
+                    }
+                )
+            ) == 0) {
+            throw new \InvalidArgumentException('Ожидается, что один из параметров должен быть отличным от "null".');
+        }
+    }
 }

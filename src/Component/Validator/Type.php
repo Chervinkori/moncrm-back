@@ -4,6 +4,7 @@ namespace App\Component\Validator;
 
 /**
  * Class Type
+ *
  * @package App\Component\ResponseBuilder
  */
 final class Type

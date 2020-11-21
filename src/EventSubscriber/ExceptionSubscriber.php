@@ -13,6 +13,7 @@ use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class ExceptionSubscriber
+ *
  * @package App\EventSubscriber
  */
 class ExceptionSubscriber implements EventSubscriberInterface
@@ -24,6 +25,7 @@ class ExceptionSubscriber implements EventSubscriberInterface
 
     /**
      * ExceptionSubscriber constructor.
+     *
      * @param KernelInterface $kernel
      */
     public function __construct(KernelInterface $kernel)
