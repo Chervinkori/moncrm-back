@@ -22,6 +22,6 @@ class HomeController extends AbstractController
      */
     public function home(JsonResponse $response): Response
     {
-        return $response->success();
+        return $response->success(null, 'Home page');
     }
 }
