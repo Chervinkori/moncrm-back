@@ -6,6 +6,7 @@ namespace App\Component\Validator\Exceptions;
  * Interface InvalidTypeExceptionContract
  *
  * @package App\Component\Validator\Exceptions
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 interface InvalidTypeExceptionContract
 {

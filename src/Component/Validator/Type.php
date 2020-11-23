@@ -3,9 +3,10 @@
 namespace App\Component\Validator;
 
 /**
- * Class Type
+ * Класс контейнер для типов данных.
  *
- * @package App\Component\ResponseBuilder
+ * @package App\Component\Validator
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 final class Type
 {

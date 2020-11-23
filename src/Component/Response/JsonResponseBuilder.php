@@ -9,11 +9,10 @@ use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 /**
- * Сборщик ответа.
- *
- * Class JsonResponseBuilder
+ * Сборщик HTTP-ответа в формате JSON.
  *
  * @package App\Component\Response
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class JsonResponseBuilder extends AResponseBuilder
 {
@@ -32,9 +31,11 @@ class JsonResponseBuilder extends AResponseBuilder
     // -----------------------------------------------------------------------------------------------------------
 
     /**
-     * @param array|null $meta
+     * Добавляем в строитель ответов мета-информацию.
      *
-     * @return $this
+     * @param array|null $meta Мета-данные.
+     *
+     * @return $this Экземпляр строителя.
      */
     public function withMeta($meta = null): self
     {
@@ -46,9 +47,11 @@ class JsonResponseBuilder extends AResponseBuilder
     }
 
     /**
-     * @param mixed|null $data
+     * Добавляем в строитель ответов данные.
      *
-     * @return $this
+     * @param mixed|null $data Данные для ответа.
+     *
+     * @return $this Экземпляр строителя.
      */
     public function withData($data = null): self
     {
@@ -79,9 +82,12 @@ class JsonResponseBuilder extends AResponseBuilder
     }
 
     /**
-     * @param array|object|null $debugData
+     * Добавляем в строитель ответов отладочную информацию.
+     * Отладочная информация попадёт в готовый ответ если в приложении включен режим отладки.
      *
-     * @return $this
+     * @param array|object|null $debugData Отладочная информация.
+     *
+     * @return $this Экземпляр строителя.
      */
     public function withDebugData($debugData = null): self
     {
@@ -105,9 +111,11 @@ class JsonResponseBuilder extends AResponseBuilder
     }
 
     /**
-     * @param string|null $message
+     * Добавляем в строитель ответов сообщение.
      *
-     * @return $this
+     * @param string|null $message Сообщение.
+     *
+     * @return $this Экземпляр строителя.
      */
     public function withMessage(string $message = null): self
     {
@@ -119,7 +127,7 @@ class JsonResponseBuilder extends AResponseBuilder
     }
 
     /**
-     * @return string|null
+     * @return string|null Готовое сообщение, для вложения в тело ответа.
      */
     private function getMessage()
     {
@@ -134,7 +142,7 @@ class JsonResponseBuilder extends AResponseBuilder
     }
 
     /**
-     * @return array|null
+     * @return array|null Готовый данные, для вложения в тело ответа.
      */
     private function getData()
     {
@@ -157,7 +165,7 @@ class JsonResponseBuilder extends AResponseBuilder
     }
 
     /**
-     * @return array
+     * @return array  Готовая отладочная информация, для вложения в тело ответа.
      */
     private function getDebugData()
     {
@@ -198,7 +206,7 @@ class JsonResponseBuilder extends AResponseBuilder
      *
      * @param array $params Дополнительные параметры сборщика.
      *
-     * @return static
+     * @return static Экземпляр строителя ответов.
      */
     public static function create(array $params = []): self
     {
@@ -210,7 +218,12 @@ class JsonResponseBuilder extends AResponseBuilder
     }
 
     /**
-     * @return array
+     * Создаёт стандартизированный массив ответов API. Это окончательный метод, вызываемый во всем конвейере, прежде
+     * чем мы вернём окончательный JSON обратно клиенту. Если вы хотите манипулировать своим ответом, это место для
+     * этого. Если APP_DEBUG установлено значение true, поле code _ hex будет добавлено в отчет JSON для упрощения
+     * отладки вручную.
+     *
+     * @return array Тело ответа в виде массива.
      */
     protected function buildResponseData(): array
     {
@@ -230,9 +243,9 @@ class JsonResponseBuilder extends AResponseBuilder
     }
 
     /**
-     * @param array $data
+     * Валидация данных ответа. В случае ошибки вернуть исключение.
      *
-     * @return mixed|void
+     * @param array $data Данные ответа для валидации.
      */
     protected function validationResponseData(array $data)
     {

@@ -13,17 +13,16 @@ use Symfony\Component\Security\Core\Validator\Constraints as SecurityAssert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
- * Пользователь системы
- *
- * Class User
- *
- * @package App\Entity
+ * Сущность пользователя системы.
  *
  * @ORM\Entity(repositoryClass=UserRepository::class)
  * @ORM\Table(name="`user`")
  *
  * @UniqueEntity(fields="email", message="Пользователь с таким адресом электронной почты уже существует.",
  *                               groups={"common"})
+ *
+ * @package App\Entity
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class User extends AbstractEntity implements UserInterface
 {

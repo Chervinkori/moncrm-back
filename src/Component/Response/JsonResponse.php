@@ -6,9 +6,10 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
- * Class JsonResponse
+ * Класс создания HTTP-ответа в формате JSON.
  *
  * @package App\Component\Response
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class JsonResponse
 {
@@ -17,6 +18,11 @@ class JsonResponse
      */
     private $params;
 
+    /**
+     * JsonResponse constructor.
+     *
+     * @param KernelInterface $kernel Ядро с параметрами.
+     */
     public function __construct(KernelInterface $kernel)
     {
         $this->params = [
@@ -29,7 +35,7 @@ class JsonResponse
      *
      * @param bool $success Статус выполнения ($success = true|false).
      *
-     * @return JsonResponseBuilder
+     * @return JsonResponseBuilder Экземпляр строителя ответов.
      */
     public function createResponseBuilder(bool $success = true): JsonResponseBuilder
     {
@@ -46,7 +52,7 @@ class JsonResponse
      * @param integer|null      $httpCode    HTTP-код ответа. По умолчанию 200.
      * @param array|null        $httpHeaders HTTP заголовки для включения в объект ответа.
      *
-     * @return Response
+     * @return Response Готовый успешный Http-ответ.
      */
     public function success(
         $data = null,
@@ -78,7 +84,7 @@ class JsonResponse
      * @param int|null          $httpCode    HTTP-код ответа. По умолчанию 400.
      * @param array|null        $httpHeaders HTTP заголовки для включения в объект ответа.
      *
-     * @return Response
+     * @return Response Готовый ошибочный Http-ответ.
      */
     public function error(
         string $message = null,

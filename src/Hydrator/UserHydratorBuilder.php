@@ -7,11 +7,10 @@ use App\Hydrator\Strategy\PasswordEncodeStrategy;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
 /**
- * Строитель гидратора пользователя
- *
- * Class UserBuilder
+ * Строитель гидратора пользователя.
  *
  * @package App\Hydrator
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class UserHydratorBuilder extends AbstractHydratorBuilder
 {
@@ -30,6 +29,9 @@ class UserHydratorBuilder extends AbstractHydratorBuilder
         $this->encoder = $encoder;
     }
 
+    /**
+     * Добавляет стратегии к гидратору.
+     */
     protected function addStrategies(): void
     {
         $hydrator = $this->getHydrator();
@@ -39,6 +41,9 @@ class UserHydratorBuilder extends AbstractHydratorBuilder
         $hydrator->addStrategy('lastname', new FirstUppercaseStrategy);
     }
 
+    /**
+     * Добавляет стратегии нейминга к гидратору.
+     */
     protected function setNamingStrategies(): void
     {
     }

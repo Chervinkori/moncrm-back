@@ -7,12 +7,13 @@ use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
 
 /**
- * Class UserSession
- *
- * @package App\Entity
+ * Сущность пользовательских сессий.
  *
  * @ORM\Entity(repositoryClass=UserSessionRepository::class)
  * @ORM\Table(name="`user_session`", indexes={@ORM\Index(name="idx_user_session_exp", columns={"exp"})})
+ *
+ * @package App\Entity
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class UserSession extends AbstractEntity
 {

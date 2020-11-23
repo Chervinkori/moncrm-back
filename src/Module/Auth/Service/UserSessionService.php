@@ -9,6 +9,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Symfony\Component\HttpFoundation\Cookie;
 
+/**
+ * Сервис пользовательских сессий.
+ *
+ * @package App\Module\Auth\Service
+ * @author  Roman Chervinko <romachervinko@gmail.com>
+ */
 class UserSessionService
 {
     /**
@@ -44,7 +50,7 @@ class UserSessionService
     }
 
     /**
-     * Удаляет просроченные сессии пользователя
+     * Удаляет просроченные сессии пользователя.
      *
      * @param User $user
      */
@@ -57,7 +63,7 @@ class UserSessionService
     }
 
     /**
-     * Удаляет сессии
+     * Удаляет сессии.
      *
      * @param array|UserSession $sessions
      */
@@ -78,7 +84,7 @@ class UserSessionService
     }
 
     /**
-     * Создает сессию пользователя
+     * Создаёт сессию пользователя.
      *
      * @param User        $user
      * @param string      $clientIp
@@ -103,7 +109,7 @@ class UserSessionService
     }
 
     /**
-     * Создает куку с refresh_token для UserSession
+     * Создаёт куку с refresh_token для сессии пользователя.
      *
      * @param UserSession $userSession
      *

@@ -7,12 +7,16 @@ use Laminas\Hydrator\Strategy\StrategyInterface;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
 /**
- * Class PasswordEncodeStrategy
+ * Стратегия кодирования пароля пользователя.
  *
- * @package App\Modules\Auth\Hydrator\Strategy
+ * @package App\Hydrator\Strategy
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class PasswordEncodeStrategy implements StrategyInterface
 {
+    /**
+     * @var UserPasswordEncoderInterface
+     */
     public $encoder;
 
     /**
@@ -25,11 +29,23 @@ class PasswordEncodeStrategy implements StrategyInterface
         $this->encoder = $encoder;
     }
 
+    /**
+     * @param mixed       $value
+     * @param object|null $object
+     *
+     * @return mixed
+     */
     public function extract($value, ?object $object = null)
     {
         return $value;
     }
 
+    /**
+     * @param mixed      $value
+     * @param array|null $data
+     *
+     * @return mixed|string
+     */
     public function hydrate($value, ?array $data)
     {
         return $this->encoder->encodePassword(new User(), $value);

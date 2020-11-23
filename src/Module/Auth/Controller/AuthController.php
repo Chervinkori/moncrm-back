@@ -19,15 +19,18 @@ use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
+ * Контроллер авторизации.
+ *
  * @Route("/auth", name="auth_")
  *
- * Class AuthController
- *
- * @package App\Controller
+ * @package App\Module\Auth\Controller
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class AuthController extends AbstractController
 {
     /**
+     * Регистрация пользователя в системе.
+     *
      * @Route("/register", name="register", methods={"POST"})
      *
      * @param Request             $request
@@ -66,6 +69,8 @@ class AuthController extends AbstractController
     }
 
     /**
+     * Авторизация пользователя в системе.
+     *
      * @IsGranted("IS_ANONYMOUS")
      * @Route("/login", name="login", methods={"POST"})
      *
@@ -126,6 +131,8 @@ class AuthController extends AbstractController
     }
 
     /**
+     * Обновление токена доступа.
+     *
      * @Route("/refresh-token", name="refresh-token", methods={"POST"})
      *
      * @param Request               $request

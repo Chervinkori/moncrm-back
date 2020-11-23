@@ -1,4 +1,5 @@
 .idea
+.phpdoc
 
 ###> symfony/framework-bundle ###
 /.env.local

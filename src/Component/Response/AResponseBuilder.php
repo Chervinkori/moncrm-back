@@ -8,9 +8,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Class AResponseBuilder
+ * Абстрактный класс сборщика ответа.
  *
  * @package App\Component\Response
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 abstract class AResponseBuilder
 {
@@ -158,7 +159,7 @@ abstract class AResponseBuilder
      * вызывать build() несколько раз, для получения нового объекта ответа. Также безопасно изменять любой набор
      * параметров заранее и после вызывать build(), чтобы получить новый объект ответа, включающий новые изменения.
      *
-     * @return Response
+     * @return Response Готовый Http-ответ.
      */
     public function build(): Response
     {
@@ -191,7 +192,7 @@ abstract class AResponseBuilder
      *
      * @param array $params
      *
-     * @return mixed
+     * @return AResponseBuilder Экземпляр строителя ответов.
      */
     abstract public static function create(array $params = []);
 
@@ -201,7 +202,7 @@ abstract class AResponseBuilder
      * этого. Если APP_DEBUG установлено значение true, поле code _ hex будет добавлено в отчет JSON для упрощения
      * отладки вручную.
      *
-     * @return array Готовые данные для ответа.
+     * @return array Тело ответа в виде массива.
      */
     abstract protected function buildResponseData(): array;
 
@@ -209,8 +210,6 @@ abstract class AResponseBuilder
      * Валидация данных ответа. В случае ошибки вернуть исключение.
      *
      * @param array $data Данные ответа для валидации.
-     *
-     * @return mixed
      */
     abstract protected function validationResponseData(array $data);
 }

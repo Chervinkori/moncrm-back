@@ -4,14 +4,12 @@ namespace App\Hydrator;
 
 use Laminas\Hydrator\AbstractHydrator;
 use Laminas\Hydrator\ClassMethodsHydrator;
-use Symfony\Component\VarExporter\Exception\ClassNotFoundException;
 
 /**
- * Абстрактные строитель гидратора
- *
- * Class AbstractBuilder
+ * Абстрактные класс строителя гидратора.
  *
  * @package App\Hydrator
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 abstract class AbstractHydratorBuilder
 {
@@ -21,9 +19,9 @@ abstract class AbstractHydratorBuilder
     private $hydrator;
 
     /**
-     * Получить гидратор.
+     * Создаёт готовый к использованию экземпляр гидратора.
      *
-     * @param string $hydratorClass Класс гидратора (по умолчанию ClassMethodsHydrator)
+     * @param string $hydratorClass Класс гидратора (по умолчанию ClassMethodsHydrator).
      *
      * @return AbstractHydrator
      */
@@ -37,6 +35,8 @@ abstract class AbstractHydratorBuilder
     }
 
     /**
+     * Получает экземпляр гидратора.
+     *
      * @return AbstractHydrator
      */
     protected function getHydrator(): AbstractHydrator
@@ -45,12 +45,12 @@ abstract class AbstractHydratorBuilder
     }
 
     /**
-     * Добавляет стратегии к гидратору
+     * Добавляет стратегии к гидратору.
      */
     abstract protected function addStrategies(): void;
 
     /**
-     * Добавляет стратегии нейминга к гидратору
+     * Добавляет стратегии нейминга к гидратору.
      */
     abstract protected function setNamingStrategies(): void;
 }

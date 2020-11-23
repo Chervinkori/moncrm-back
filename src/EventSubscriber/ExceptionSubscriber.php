@@ -2,7 +2,6 @@
 
 namespace App\EventSubscriber;
 
-use App\Utility\ResponseUtils;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
@@ -12,9 +11,10 @@ use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
- * Class ExceptionSubscriber
+ * Подписчик исключений.
  *
  * @package App\EventSubscriber
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class ExceptionSubscriber implements EventSubscriberInterface
 {

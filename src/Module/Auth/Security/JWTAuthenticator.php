@@ -16,9 +16,10 @@ use Symfony\Component\Security\Core\User\UserProviderInterface;
 use Symfony\Component\Security\Guard\AbstractGuardAuthenticator;
 
 /**
- * Class JWTAuthenticator
+ * Аутентификатор по JWT.
  *
  * @package App\Module\Auth\Security
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class JWTAuthenticator extends AbstractGuardAuthenticator
 {

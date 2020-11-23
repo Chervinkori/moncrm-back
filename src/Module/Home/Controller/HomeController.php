@@ -10,7 +10,8 @@ use Symfony\Component\Routing\Annotation\Route;
 /**
  * Class HomeController
  *
- * @package App\Controller
+ * @package App\Module\Home\Controller
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class HomeController extends AbstractController
 {

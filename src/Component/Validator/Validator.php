@@ -9,11 +9,10 @@ use App\Component\Validator\Exceptions\NotObjectException;
 use App\Component\Validator\Exceptions\NotStringException;
 
 /**
- * Компонент валидации
+ * Компонент валидации.
  *
- * Class Validator
- *
- * @package App\Component\ResponseBuilder
+ * @package App\Component\Validator
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 final class Validator
 {

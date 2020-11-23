@@ -3,20 +3,23 @@
 namespace App\Component\Token;
 
 /**
- * Class JWT
+ * Компонент создания JWT.
  *
  * @package App\Component\Token
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class JWT
 {
     /**
-     * @param array    $payload
-     * @param          $key
-     * @param int|null $lifetime Время жизни в секундах
-     * @param string   $alg
-     * @param null     $head
+     * Создание токена.
      *
-     * @return string
+     * @param array    $payload  PHP object or array.
+     * @param string   $key      The secret key.
+     * @param int|null $lifetime Время жизни в секундах.
+     * @param string   $alg      The signing algorithm.
+     * @param null     $head     An array with header elements to attach.
+     *
+     * @return string Готовый JWT.
      */
     public static function encode(
         array $payload,
@@ -47,13 +50,13 @@ class JWT
     }
 
     /**
-     * Проверить и декодировать токен
+     * Проверить и декодировать токен.
      *
-     * @param string                $jwt          The JWT
+     * @param string                $jwt          The JWT.
      * @param string|array|resource $key          The key, or map of keys.
-     * @param string|array          $allowed_algs List of supported verification algorithms
+     * @param string|array          $allowed_algs List of supported verification algorithms.
      *
-     * @return array The JWT's payload as a PHP array
+     * @return array The JWT's payload as a PHP array.
      */
     public static function decode(string $jwt, $key, $allowed_algs): array
     {

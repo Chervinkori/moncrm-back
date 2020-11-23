@@ -8,10 +8,15 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
+ * Репозиторий сущности пользовательских сессий.
+ *
  * @method UserSession|null find($id, $lockMode = null, $lockVersion = null)
  * @method UserSession|null findOneBy(array $criteria, array $orderBy = null)
  * @method UserSession[]    findAll()
  * @method UserSession[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ *
+ * @package App\Repository
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class UserSessionRepository extends ServiceEntityRepository
 {

@@ -6,14 +6,13 @@ use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\Uuid;
 
 /**
- * Абстрактная базовая сущность
- *
- * Class CoreEntity
- *
- * @package App\Entity
+ * Абстрактная базовая сущность.
  *
  * @ORM\MappedSuperclass
  * @ORM\HasLifecycleCallbacks()
+ *
+ * @package App\Entity
+ * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 abstract class AbstractEntity
 {
