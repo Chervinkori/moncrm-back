@@ -2,6 +2,7 @@
 
 namespace App\Component\Response;
 
+use App\Component\Response\Builder\JsonResponseBuilder;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
 

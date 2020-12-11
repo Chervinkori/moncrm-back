@@ -1,11 +1,14 @@
 <?php
 
-namespace App\Component\Response;
+namespace App\Component\Response\Builder;
 
-use App\Component\Validator\Type;
-use App\Component\Validator\Validator;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
+use Symfony\Component\Validator\Validation;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * Абстрактный класс сборщика ответа.
@@ -13,8 +16,15 @@ use Symfony\Component\HttpFoundation\Response;
  * @package App\Component\Response
  * @author  Roman Chervinko <romachervinko@gmail.com>
  */
-abstract class AResponseBuilder
+abstract class BaseResponseBuilder
 {
+    /**
+     * @var ValidatorInterface
+     */
+    private $validator;
+
+    // -----------------------------------------------------------------------------------------------------------
+
     /** @var bool */
     protected $success = null;
 
@@ -89,6 +99,8 @@ abstract class AResponseBuilder
     public const KEY_LINE = 'line';
 
     /** @var string */
+    public const KEY_METHOD = 'method';
+    /** @var string */
     public const KEY_BODY = 'body';
     /** @var string */
     public const KEY_COOKIES = 'cookies';
@@ -106,6 +118,7 @@ abstract class AResponseBuilder
     protected function __construct(array $params = [])
     {
         $this->params = $params;
+        $this->validator = Validation::createValidator();
     }
 
     // -----------------------------------------------------------------------------------------------------------
@@ -119,8 +132,6 @@ abstract class AResponseBuilder
      */
     public function setSuccess(bool $success = true): self
     {
-        Validator::assertIsBool('success', $success);
-
         $this->success = $success;
 
         return $this;
@@ -133,8 +144,6 @@ abstract class AResponseBuilder
      */
     public function withHttpCode(int $httpCode = null): self
     {
-        Validator::assertIsType('httpCode', $httpCode, [Type::INTEGER, Type::NULL]);
-
         $this->httpCode = $httpCode;
 
         return $this;
@@ -147,8 +156,6 @@ abstract class AResponseBuilder
      */
     public function withHttpHeaders(array $httpHeaders = null): self
     {
-        Validator::assertIsType('httpHeaders', $httpHeaders, [Type::ARRAY, Type::NULL]);
-
         $this->httpHeaders = $httpHeaders ?? [];
 
         return $this;
@@ -163,26 +170,43 @@ abstract class AResponseBuilder
      */
     public function build(): Response
     {
-        Validator::assertIsBool('success', $this->success);
+        $this->validate($this->success, new Assert\Type('boolean'));
 
         if ($this->success) {
             $httpCode = $this->httpCode ?? self::DEFAULT_HTTP_CODE_OK;
-            Validator::assertOkHttpCode($httpCode);
+            $this->validate($httpCode, new Assert\Range(['min' => Response::HTTP_OK, 'max' => 299]));
         } else {
             $httpCode = $this->httpCode ?? self::DEFAULT_HTTP_CODE_ERROR;
-            Validator::assertErrorHttpCode($httpCode);
+            $this->validate($httpCode, new Assert\Range(['min' => Response::HTTP_BAD_REQUEST, 'max' => 599]));
         }
 
-        // Формируем данные для ответа
+        // Формирует данные для ответа
         $data = $this->buildResponseData();
-        // Валидируем данные ответа
+        // Валидирует данные ответа
         $this->validationResponseData($data);
 
-        return new JsonResponse(
+        // Получает класс ответа
+        $responseClass = $this->getResponseClass();
+
+        return new $responseClass(
             $data,
             $httpCode,
             $this->httpHeaders
         );
+    }
+
+    /**
+     * Валидация параметра.
+     *
+     * @param mixed                   $value       The value to validate.
+     * @param Constraint|Constraint[] $constraints The constraint(s) to validate against.
+     */
+    public function validate($value, $constraints)
+    {
+        $violations = $this->validator->validate($value, $constraints);
+        if ($violations->count() !== 0) {
+            throw new ValidationFailedException($value, $violations);
+        }
     }
 
     // -----------------------------------------------------------------------------------------------------------
@@ -192,9 +216,16 @@ abstract class AResponseBuilder
      *
      * @param array $params
      *
-     * @return AResponseBuilder Экземпляр строителя ответов.
+     * @return BaseResponseBuilder Экземпляр строителя ответов.
      */
     abstract public static function create(array $params = []);
+
+    /**
+     * Получить класс ответа.
+     *
+     * @return string Класс ответа.
+     */
+    abstract protected function getResponseClass(): string;
 
     /**
      * Создаёт стандартизированный массив ответов API. Это окончательный метод, вызываемый во всем конвейере, прежде

@@ -46,7 +46,7 @@ class PasswordEncodeStrategy implements StrategyInterface
      *
      * @return mixed|string
      */
-    public function hydrate($value, ?array $data)
+    public function hydrate($value, ?array $data): string
     {
         return $this->encoder->encodePassword(new User(), $value);
     }

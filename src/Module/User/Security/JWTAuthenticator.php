@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Module\Auth\Security;
+namespace App\Module\User\Security;
 
 use App\Component\Response\JsonResponse;
 use App\Component\Token\JWT;
@@ -61,7 +61,7 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
      *
      * @return bool
      */
-    public function supports(Request $request)
+    public function supports(Request $request): bool
     {
         return $request->headers->has('Authorization')
             && preg_match('/Bearer\s(\S+)/', $request->headers->get('Authorization'));
@@ -72,7 +72,7 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
      *
      * @return array|mixed
      */
-    public function getCredentials(Request $request)
+    public function getCredentials(Request $request): array
     {
         // Получаем токен доступа
         $jwt = str_replace('Bearer ', '', $request->headers->get('Authorization'));
@@ -115,7 +115,7 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
      *
      * @return bool
      */
-    public function checkCredentials($credentials, UserInterface $user)
+    public function checkCredentials($credentials, UserInterface $user): bool
     {
         return true;
     }
@@ -128,7 +128,7 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
      *
      * @return Response|null
      */
-    public function onAuthenticationFailure(Request $request, AuthenticationException $exception)
+    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
     {
         return $this->jsonResponse->error(
             'Ошибка авторизации пользователя',
@@ -173,7 +173,7 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
     /**
      * @return bool
      */
-    public function supportsRememberMe()
+    public function supportsRememberMe(): bool
     {
         return false;
     }

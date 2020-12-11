@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Module\Auth\Controller;
+namespace App\Module\User\Controller;
 
 use App\Component\Response\JsonResponse;
 use App\Component\Token\JWT;
 use App\Entity\User;
 use App\Entity\UserSession;
-use App\Hydrator\UserHydratorBuilder;
-use App\Module\Auth\Service\UserSessionService;
+use App\Hydrator\UserHydrator;
+use App\Module\User\Service\UserSessionService;
 use App\Repository\UserRepository;
 use App\Repository\UserSessionRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -33,22 +33,23 @@ class AuthController extends AbstractController
      *
      * @Route("/register", name="register", methods={"POST"})
      *
-     * @param Request             $request
-     * @param JsonResponse        $jsonResponse
-     * @param UserHydratorBuilder $userHydratorBuilder
-     * @param ValidatorInterface  $validator
+     * @param Request            $request
+     * @param JsonResponse       $jsonResponse
+     * @param ValidatorInterface $validator
+     * @param UserHydrator       $userHydrator
      *
      * @return Response
      */
     public function register(
         Request $request,
         JsonResponse $jsonResponse,
-        UserHydratorBuilder $userHydratorBuilder,
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        UserHydrator $userHydrator
     ): Response {
-        $hydrator = $userHydratorBuilder->build();
+        $hydrator = $userHydrator->create();
         $user = $hydrator->hydrate($request->request->all(), new User());
 
+        // Валидация данных
         $errors = $validator->validate($user, null, 'common');
         if ($errors->count()) {
             return $jsonResponse->error(null, $errors, $request);
@@ -141,8 +142,8 @@ class AuthController extends AbstractController
      * @param UserSessionService    $userSessionService
      *
      * @return Response
-     *
      * @throws \Exception
+     * @api
      */
     public function refreshToken(
         Request $request,

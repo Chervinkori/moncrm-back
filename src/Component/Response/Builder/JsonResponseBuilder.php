@@ -1,12 +1,14 @@
 <?php
 
-namespace App\Component\Response;
+namespace App\Component\Response\Builder;
 
-use App\Component\Validator\Type;
-use App\Component\Validator\Validator;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
+use Symfony\Component\Validator\Validation;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Сборщик HTTP-ответа в формате JSON.
@@ -14,7 +16,7 @@ use Symfony\Component\Validator\ConstraintViolationListInterface;
  * @package App\Component\Response
  * @author  Roman Chervinko <romachervinko@gmail.com>
  */
-class JsonResponseBuilder extends AResponseBuilder
+class JsonResponseBuilder extends BaseResponseBuilder
 {
     /** @var array|null */
     protected $meta = null;
@@ -39,8 +41,7 @@ class JsonResponseBuilder extends AResponseBuilder
      */
     public function withMeta($meta = null): self
     {
-        Validator::assertIsType('meta', $meta, [Type::ARRAY, Type::NULL]);
-
+        $this->validate($meta, new Assert\Type('array'));
         $this->meta = $meta;
 
         return $this;
@@ -55,25 +56,13 @@ class JsonResponseBuilder extends AResponseBuilder
      */
     public function withData($data = null): self
     {
-        Validator::assertIsType(
-            'data',
-            $data,
-            [
-                Type::ARRAY,
-                Type::BOOLEAN,
-                Type::INTEGER,
-                Type::STRING,
-                Type::OBJECT,
-                Type::NULL,
-            ]
-        );
-
+        $this->validate($data, new Assert\Type(['array', 'boolean', 'integer', 'string', 'object']));
         // Ограничения для объекта
-        if (gettype($data) === Type::OBJECT) {
-            // Разрешен только объект с ошибками валидации
-            Validator::assertInstanceOf('data', $data, ConstraintViolationListInterface::class);
+        if (gettype($data) === 'object') {
             // Только для отрицательного ответа
-            Validator::assertIsFalse('success', $this->success);
+            $this->validate($this->success, new Assert\IsFalse());
+            // Разрешен только объект с ошибками валидации
+            $this->validate($data, new Assert\Type(ConstraintViolationListInterface::class));
         }
 
         $this->data = $data;
@@ -91,7 +80,7 @@ class JsonResponseBuilder extends AResponseBuilder
      */
     public function withDebugData($debugData = null): self
     {
-        Validator::assertIsType('debugData', $debugData, [Type::ARRAY, Type::OBJECT, Type::NULL]);
+        $this->validate($debugData, new Assert\Type(['array', 'object']));
 
         if (!is_array($debugData)) {
             $debugData = [$debugData];
@@ -99,9 +88,9 @@ class JsonResponseBuilder extends AResponseBuilder
 
         foreach ($debugData as $data) {
             // Ограничения для объекта
-            if (gettype($data) === Type::OBJECT) {
+            if (gettype($data) === 'object') {
                 // Разрешен только объект исключений или объект запроса
-                Validator::assertInstanceOf('debugData', $data, [\Exception::class, Request::class]);
+                $this->validate($data, new Assert\Type([\Exception::class, Request::class]));
             }
         }
 
@@ -119,7 +108,7 @@ class JsonResponseBuilder extends AResponseBuilder
      */
     public function withMessage(string $message = null): self
     {
-        Validator::assertIsType('message', $message, [Type::STRING, Type::NULL]);
+        $this->validate($message, new Assert\Type('string'));
 
         $this->message = $message;
 
@@ -129,7 +118,7 @@ class JsonResponseBuilder extends AResponseBuilder
     /**
      * @return string|null Готовое сообщение, для вложения в тело ответа.
      */
-    private function getMessage()
+    private function getMessage(): ?string
     {
         $message = null;
         if ($this->data instanceof ConstraintViolationListInterface) {
@@ -144,7 +133,7 @@ class JsonResponseBuilder extends AResponseBuilder
     /**
      * @return array|null Готовый данные, для вложения в тело ответа.
      */
-    private function getData()
+    private function getData(): ?array
     {
         $data = null;
         if ($this->data instanceof ConstraintViolationListInterface) {
@@ -167,7 +156,7 @@ class JsonResponseBuilder extends AResponseBuilder
     /**
      * @return array  Готовая отладочная информация, для вложения в тело ответа.
      */
-    private function getDebugData()
+    private function getDebugData(): array
     {
         $debugData = null;
 
@@ -185,7 +174,8 @@ class JsonResponseBuilder extends AResponseBuilder
                 } while ($exp = $exp->getPrevious());
             } elseif ($data instanceof Request) {
                 $debugData['request'] = [
-                    self::KEY_BODY => $data->request->all(),
+                    self::KEY_METHOD => $data->getMethod(),
+                    self::KEY_BODY => $data->isMethod('POST') ? $data->request->all() : $data->query->all(),
                     self::KEY_COOKIES => $data->cookies->all(),
                     self::KEY_HEADERS => $data->headers->all(),
                 ];
@@ -211,10 +201,37 @@ class JsonResponseBuilder extends AResponseBuilder
     public static function create(array $params = []): self
     {
         // Проверяем обязательный параметр 'debug'
-        Validator::assertKeyContains('params', $params, 'debug');
-        Validator::assertIsBool('params.debug', $params['debug']);
+        $validator = Validation::createValidator();
+        $violations = $validator->validate(
+            $params,
+            new Assert\Collection(
+                [
+                    'fields' => [
+                        'debug' => new Assert\Required(
+                            [
+                                new Assert\NotBlank(),
+                                new Assert\Type('boolean')
+                            ]
+                        )
+                    ]
+                ]
+            )
+        );
+        if ($violations->count() !== 0) {
+            throw new ValidationFailedException($params, $violations);
+        }
 
         return new static($params);
+    }
+
+    /**
+     * Получить класс ответа.
+     *
+     * @return string Класс ответа.
+     */
+    protected function getResponseClass(): string
+    {
+        return JsonResponse::class;
     }
 
     /**
@@ -249,13 +266,23 @@ class JsonResponseBuilder extends AResponseBuilder
      */
     protected function validationResponseData(array $data)
     {
-        Validator::assertIsBool('success', $this->success);
+        $this->validate($this->success, new Assert\Type('boolean'));
 
         if ($data[self::KEY_SUCCESS]) {
-            // TODO
-            Validator::assertAtLeastOneIsNotNull([$data[self::KEY_DATA], $data[self::KEY_MESSAGE]]);
+            // Хотя бы один из параметров не пустой: self::KEY_DATA, self::KEY_MESSAGE
+            $this->validate(
+                $data,
+                new Assert\AtLeastOneOf(
+                    [
+                        'constraints' => [
+                            new Assert\Collection(['fields' => [self::KEY_DATA => new Assert\NotBlank()], 'allowExtraFields' => true]),
+                            new Assert\Collection(['fields' => [self::KEY_MESSAGE => new Assert\NotBlank()], 'allowExtraFields' => true])
+                        ]
+                    ]
+                )
+            );
         } else {
-            Validator::assertIsNotNull('message', $data[self::KEY_MESSAGE]);
+            $this->validate($data[self::KEY_MESSAGE], new Assert\NotBlank());
         }
     }
 }

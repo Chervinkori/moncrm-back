@@ -4,15 +4,17 @@ namespace App\Hydrator;
 
 use App\Hydrator\Strategy\FirstUppercaseStrategy;
 use App\Hydrator\Strategy\PasswordEncodeStrategy;
+use Laminas\Hydrator\AbstractHydrator;
+use Laminas\Hydrator\ClassMethodsHydrator;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 
 /**
- * Строитель гидратора пользователя.
+ * Гидратор пользователя.
  *
  * @package App\Hydrator
  * @author  Roman Chervinko <romachervinko@gmail.com>
  */
-class UserHydratorBuilder extends AbstractHydratorBuilder
+class UserHydrator extends BaseHydrator
 {
     /**
      * @var UserPasswordEncoderInterface
@@ -20,8 +22,6 @@ class UserHydratorBuilder extends AbstractHydratorBuilder
     private $encoder;
 
     /**
-     * UserBuilder constructor.
-     *
      * @param UserPasswordEncoderInterface $encoder
      */
     public function __construct(UserPasswordEncoderInterface $encoder)
@@ -30,11 +30,18 @@ class UserHydratorBuilder extends AbstractHydratorBuilder
     }
 
     /**
-     * Добавляет стратегии к гидратору.
+     * @return AbstractHydrator
      */
-    protected function addStrategies(): void
+    protected function getHydrator(): AbstractHydrator
     {
-        $hydrator = $this->getHydrator();
+        return new ClassMethodsHydrator();
+    }
+
+    /**
+     * @param AbstractHydrator $hydrator
+     */
+    protected function addStrategies(AbstractHydrator &$hydrator): void
+    {
         $hydrator->addStrategy('password', new PasswordEncodeStrategy($this->encoder));
         $hydrator->addStrategy('firstname', new FirstUppercaseStrategy);
         $hydrator->addStrategy('middlename', new FirstUppercaseStrategy);
@@ -42,9 +49,9 @@ class UserHydratorBuilder extends AbstractHydratorBuilder
     }
 
     /**
-     * Добавляет стратегии нейминга к гидратору.
+     * @param AbstractHydrator $hydrator
      */
-    protected function setNamingStrategies(): void
+    protected function setNamingStrategies(AbstractHydrator &$hydrator): void
     {
     }
 }
