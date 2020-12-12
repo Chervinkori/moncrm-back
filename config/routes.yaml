@@ -1,3 +1,7 @@
 #index:
 #    path: /
 #    controller: App\Controller\DefaultController::index
+
+auth_logout:
+  path: /backend/auth/logout
+  methods: GET

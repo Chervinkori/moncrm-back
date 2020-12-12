@@ -50,57 +50,57 @@ class ExceptionSubscriber implements EventSubscriberInterface
      */
     public function setResponse(ExceptionEvent $event)
     {
-        try {
-            $exp = $event->getThrowable();
-
-            // Debug mode
-            if ($this->isDebug) {
-                $e = $exp;
-                do {
-                    $exceptionData[] = [
-                        'type' => get_class($e),
-                        'file' => $e->getFile(),
-                        'line' => $e->getLine(),
-                        'trace' => $e->getTraceAsString()
-                    ];
-                } while ($e = $e->getPrevious());
-
-                $response = ResponseUtils::jsonError(
-                    $exp->getMessage(),
-                    ['exceptions' => $exceptionData],
-                    method_exists($exp, 'getStatusCode') ? $exp->getStatusCode() : Response::HTTP_BAD_REQUEST
-                );
-
-                $event->setResponse($response);
-                return;
-            }
-
-            // TODO: дописать условия
-            if ($exp instanceof NotFoundHttpException) {
-                $response = ResponseUtils::jsonError(
-                    'Страница не найдена',
-                    $exp->getMessage(),
-                    $exp->getStatusCode(),
-                    $exp->getHeaders()
-                );
-            } elseif ($exp instanceof AccessDeniedHttpException) {
-                $response = ResponseUtils::jsonError(
-                    'Недостаточно прав доступа',
-                    $exp->getMessage(),
-                    $exp->getStatusCode(),
-                    $exp->getHeaders()
-                );
-            } else {
-                throw $exp;
-            }
-        } catch (\Throwable $exp) {
-            $response = ResponseUtils::jsonError(
-                'Непредвиденная ошибка',
-                $exp->getMessage(),
-                Response::HTTP_INTERNAL_SERVER_ERROR
-            );
-        }
-
-        $event->setResponse($response);
+//        try {
+//            $exp = $event->getThrowable();
+//
+//            // Debug mode
+//            if ($this->isDebug) {
+//                $e = $exp;
+//                do {
+//                    $exceptionData[] = [
+//                        'type' => get_class($e),
+//                        'file' => $e->getFile(),
+//                        'line' => $e->getLine(),
+//                        'trace' => $e->getTraceAsString()
+//                    ];
+//                } while ($e = $e->getPrevious());
+//
+//                $response = ResponseUtils::jsonError(
+//                    $exp->getMessage(),
+//                    ['exceptions' => $exceptionData],
+//                    method_exists($exp, 'getStatusCode') ? $exp->getStatusCode() : Response::HTTP_BAD_REQUEST
+//                );
+//
+//                $event->setResponse($response);
+//                return;
+//            }
+//
+//            // TODO: дописать условия
+//            if ($exp instanceof NotFoundHttpException) {
+//                $response = ResponseUtils::jsonError(
+//                    'Страница не найдена',
+//                    $exp->getMessage(),
+//                    $exp->getStatusCode(),
+//                    $exp->getHeaders()
+//                );
+//            } elseif ($exp instanceof AccessDeniedHttpException) {
+//                $response = ResponseUtils::jsonError(
+//                    'Недостаточно прав доступа',
+//                    $exp->getMessage(),
+//                    $exp->getStatusCode(),
+//                    $exp->getHeaders()
+//                );
+//            } else {
+//                throw $exp;
+//            }
+//        } catch (\Throwable $exp) {
+//            $response = ResponseUtils::jsonError(
+//                'Непредвиденная ошибка',
+//                $exp->getMessage(),
+//                Response::HTTP_INTERNAL_SERVER_ERROR
+//            );
+//        }
+//
+//        $event->setResponse($response);
     }
 }

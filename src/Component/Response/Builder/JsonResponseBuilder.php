@@ -154,9 +154,9 @@ class JsonResponseBuilder extends BaseResponseBuilder
     }
 
     /**
-     * @return array  Готовая отладочная информация, для вложения в тело ответа.
+     * @return array|null  Готовая отладочная информация, для вложения в тело ответа.
      */
-    private function getDebugData(): array
+    private function getDebugData(): ?array
     {
         $debugData = null;
 

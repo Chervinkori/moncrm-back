@@ -161,13 +161,10 @@ class AuthController extends AbstractController
         /** @var UserSession $userSession */
         $userSession = $userSessionRepository->find($refreshToken);
         if (!$userSession) {
-            return $jsonResponse->error(
-                'Сессия пользователя не найдена',
-                null,
-                $request,
-                null,
-                ['refreshToken' => $refreshToken]
-            );
+            $response = $jsonResponse->error('Сессия пользователя не найдена', null, $request);
+            // Удаляет токен обновления доступа из cookie
+            $response->headers->clearCookie('refresh_token', '/backend/auth');
+            return $response;
         }
 
         // Проверяем что рефреш токен не украден.
@@ -179,7 +176,10 @@ class AuthController extends AbstractController
             $em->flush();
 
             // TODO: логирование?
-            return $jsonResponse->error('Сессия пользователя не найдена', null, $request);
+            $response = $jsonResponse->error('Сессия пользователя не найдена', null, $request);
+            // Удаляет токен обновления доступа из cookie
+            $response->headers->clearCookie('refresh_token', '/backend/auth');
+            return $response;
         }
 
         // Получаем пользователя из сессии, т.к. дальше сессия удаляется
