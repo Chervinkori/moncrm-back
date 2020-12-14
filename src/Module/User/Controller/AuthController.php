@@ -73,7 +73,7 @@ class AuthController extends AbstractController
      * Авторизация пользователя в системе.
      *
      * @IsGranted("IS_ANONYMOUS")
-     * @Route("/login", name="login", methods={"POST"})
+     * @Route("/sign-in", name="signIn", methods={"POST"})
      *
      * @param Request                      $request
      * @param JsonResponse                 $jsonResponse
@@ -86,7 +86,7 @@ class AuthController extends AbstractController
      *
      * @throws \Exception
      */
-    public function login(
+    public function signIn(
         Request $request,
         JsonResponse $jsonResponse,
         UserRepository $userRepository,
@@ -94,24 +94,24 @@ class AuthController extends AbstractController
         UserSessionService $userSessionService,
         UserSessionRepository $userSessionRepository
     ): Response {
-        // Получаем пользователя
+        // Получает пользователя
         $user = $userRepository->findOneBy(['email' => $request->get('email')]);
-        // Проверяем пользователя и валидность пароля
+        // Проверяет пользователя и валидность пароля
         if (!$user || !$encoder->isPasswordValid($user, $request->get('password'))) {
             return $jsonResponse->error('Неверный логин или пароль', null, $request);
         }
 
-        // Удаляем просроченные сессии пользователя
+        // Удаляет просроченные сессии пользователя
         $userSessionService->deleteExpireSession($user);
-        // Делаем поиск текущей сессии (по ip)
+        // Поиск текущей сессии (по ip)
         // В теории их может быть несколько (это некорректно)
         $currentUserSessions = $userSessionRepository->getActiveSessions($user, $request->getClientIp());
-        // Удаляем текущие сессии (чтобы не дублировать)
+        // Удаляет текущие сессии (чтобы не дублировать)
         $userSessionService->deleteSessions($currentUserSessions);
         // Создаём сессию пользователя
         $userSession = $userSessionService->createUserSession($user, $request->getClientIp());
 
-        // Генерируем токен доступа
+        // Генерирует токен доступа
         $accessToken = JWT::encode(
             ['uuid' => $user->getUuid()],
             $this->getParameter('app_secret'),
@@ -134,7 +134,7 @@ class AuthController extends AbstractController
     /**
      * Обновление токена доступа.
      *
-     * @Route("/refresh-token", name="refresh-token", methods={"POST"})
+     * @Route("/refresh-access-token", name="refreshAccessToken", methods={"POST"})
      *
      * @param Request               $request
      * @param JsonResponse          $jsonResponse
@@ -145,18 +145,17 @@ class AuthController extends AbstractController
      * @throws \Exception
      * @api
      */
-    public function refreshToken(
+    public function refreshAccessToken(
         Request $request,
         JsonResponse $jsonResponse,
         UserSessionRepository $userSessionRepository,
         UserSessionService $userSessionService
     ): Response {
-        if (!$request->cookies->has('refresh_token')) {
+        // Получает из кук рефреш токен
+        $refreshToken = $request->cookies->get('refresh_token');
+        if (!$refreshToken) {
             return $jsonResponse->error('Отсутствует токен обновления доступа');
         }
-
-        // Получаем из кук рефреш токен
-        $refreshToken = $request->cookies->get('refresh_token');
 
         /** @var UserSession $userSession */
         $userSession = $userSessionRepository->find($refreshToken);
@@ -164,10 +163,25 @@ class AuthController extends AbstractController
             $response = $jsonResponse->error('Сессия пользователя не найдена', null, $request);
             // Удаляет токен обновления доступа из cookie
             $response->headers->clearCookie('refresh_token', '/backend/auth');
+
             return $response;
         }
 
-        // Проверяем что рефреш токен не украден.
+        // Если сессия просрочена
+        if ($userSession->getExp() < new \DateTime()) {
+            // Удаляет сессию пользователя
+            $em = $this->getDoctrine()->getManager();
+            $em->remove($userSession);
+            $em->flush();
+
+            $response = $jsonResponse->error('Сессия пользователя истекла', null, $request);
+            // Удаляет токен обновления доступа из cookie
+            $response->headers->clearCookie('refresh_token', '/backend/auth');
+
+            return $response;
+        }
+
+        // Проверяет что рефреш токен не украден.
         // Т.е. ip пользователя на момент создания токена и сейчас совпадают
         // TODO: дописать проверку fingerprint
         if ($userSession->getIp() != $request->getClientIp()) {
@@ -175,29 +189,31 @@ class AuthController extends AbstractController
             $em->remove($userSession);
             $em->flush();
 
-            // TODO: логирование?
+            // TODO: залогировать
+
             $response = $jsonResponse->error('Сессия пользователя не найдена', null, $request);
             // Удаляет токен обновления доступа из cookie
             $response->headers->clearCookie('refresh_token', '/backend/auth');
+
             return $response;
         }
 
-        // Получаем пользователя из сессии, т.к. дальше сессия удаляется
+        // Получает пользователя из сессии, т.к. дальше сессия удаляется
         $user = $userSession->getUser();
 
-        // Удаляем текущую сессии (чтобы не дублировать)
+        // Удаляет текущую сессии (чтобы не дублировать)
         $userSessionService->deleteSessions($userSession);
-        // Создаем сессию пользователя
+        // Создаёт сессию пользователя
         $userSession = $userSessionService->createUserSession($user, $request->getClientIp());
 
-        // Генерируем токен доступа
+        // Генерирует токен доступа
         $accessToken = JWT::encode(
             ['uuid' => $userSession->getUser()->getUuid()],
             $this->getParameter('app_secret'),
             $this->getParameter('access_token_lifetime')
         );
 
-        // Создаём куку для рефреш токена (сессии)
+        // Создаёт куку для рефреш токена (сессии)
         $userSessionCookie = $userSessionService->createUserSessionCookie($userSession);
 
         return $jsonResponse->success(
@@ -208,5 +224,40 @@ class AuthController extends AbstractController
             null,
             ['set-cookie' => [$userSessionCookie]]
         );
+    }
+
+    /**
+     * @Route("/sign-out", name="signOut", methods={"GET"})
+     *
+     * @param Request               $request
+     * @param UserSessionRepository $userSessionRepository
+     * @param JsonResponse          $jsonResponse
+     *
+     * @return Response
+     */
+    public function signOut(
+        Request $request,
+        UserSessionRepository $userSessionRepository,
+        JsonResponse $jsonResponse
+    ): Response {
+        $response = $jsonResponse->success();
+
+        // Получает из кук рефреш токен
+        $refreshToken = $request->cookies->get('refresh_token');
+        if ($refreshToken) {
+            /** @var UserSession $userSession */
+            $userSession = $userSessionRepository->find($refreshToken);
+            if ($userSession) {
+                // Удаляет текущую сессии (чтобы не дублировать)
+                $em = $this->getDoctrine()->getManager();
+                $em->remove($userSession);
+                $em->flush();
+            }
+
+            // Удаляет токен обновления доступа из cookie
+            $response->headers->clearCookie('refresh_token', '/backend/auth');
+        }
+
+        return $response;
     }
 }

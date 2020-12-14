@@ -74,16 +74,16 @@ class JWTAuthenticator extends AbstractGuardAuthenticator
      */
     public function getCredentials(Request $request): array
     {
-        // Получаем токен доступа
+        // Получает токен доступа
         $jwt = str_replace('Bearer ', '', $request->headers->get('Authorization'));
-        // Декодируем и проверяем токен
+        // Декодирует и проверяет токен
         try {
             $payload = JWT::decode($jwt, $this->params->get('app_secret'), 'HS256');
         } catch (\Exception $exp) {
             throw new AuthenticationException('Ошибка декодирования JWT: ' . $exp->getMessage());
         }
 
-        // Проверяем наличие идентификатора пользователя
+        // Проверяет наличие идентификатора пользователя
         if (empty($payload['uuid'])) {
             throw new AuthenticationException('В токене не найден идентификатор пользователя');
         }

@@ -33,7 +33,7 @@ class JsonResponseBuilder extends BaseResponseBuilder
     // -----------------------------------------------------------------------------------------------------------
 
     /**
-     * Добавляем в строитель ответов мета-информацию.
+     * Добавляет в строитель ответов мета-информацию.
      *
      * @param array|null $meta Мета-данные.
      *
@@ -48,7 +48,7 @@ class JsonResponseBuilder extends BaseResponseBuilder
     }
 
     /**
-     * Добавляем в строитель ответов данные.
+     * Добавляет в строитель ответов данные.
      *
      * @param mixed|null $data Данные для ответа.
      *
@@ -71,7 +71,7 @@ class JsonResponseBuilder extends BaseResponseBuilder
     }
 
     /**
-     * Добавляем в строитель ответов отладочную информацию.
+     * Добавляет в строитель ответов отладочную информацию.
      * Отладочная информация попадёт в готовый ответ если в приложении включен режим отладки.
      *
      * @param array|object|null $debugData Отладочная информация.
@@ -100,7 +100,7 @@ class JsonResponseBuilder extends BaseResponseBuilder
     }
 
     /**
-     * Добавляем в строитель ответов сообщение.
+     * Добавляет в строитель ответов сообщение.
      *
      * @param string|null $message Сообщение.
      *
@@ -139,7 +139,7 @@ class JsonResponseBuilder extends BaseResponseBuilder
         if ($this->data instanceof ConstraintViolationListInterface) {
             /** @var ConstraintViolation $error */
             foreach ($this->data as $error) {
-                // Заполняем ошибками валидации
+                // Заполняет ошибками валидации
                 $data[] = [
                     self::KEY_FIELD => $error->getPropertyPath(),
                     self::KEY_VALUE => $error->getInvalidValue(),
@@ -200,7 +200,7 @@ class JsonResponseBuilder extends BaseResponseBuilder
      */
     public static function create(array $params = []): self
     {
-        // Проверяем обязательный параметр 'debug'
+        // Проверяет обязательный параметр 'debug'
         $validator = Validation::createValidator();
         $violations = $validator->validate(
             $params,
@@ -270,17 +270,17 @@ class JsonResponseBuilder extends BaseResponseBuilder
 
         if ($data[self::KEY_SUCCESS]) {
             // Хотя бы один из параметров не пустой: self::KEY_DATA, self::KEY_MESSAGE
-            $this->validate(
-                $data,
-                new Assert\AtLeastOneOf(
-                    [
-                        'constraints' => [
-                            new Assert\Collection(['fields' => [self::KEY_DATA => new Assert\NotBlank()], 'allowExtraFields' => true]),
-                            new Assert\Collection(['fields' => [self::KEY_MESSAGE => new Assert\NotBlank()], 'allowExtraFields' => true])
-                        ]
-                    ]
-                )
-            );
+//            $this->validate(
+//                $data,
+//                new Assert\AtLeastOneOf(
+//                    [
+//                        'constraints' => [
+//                            new Assert\Collection(['fields' => [self::KEY_DATA => new Assert\NotBlank()], 'allowExtraFields' => true]),
+//                            new Assert\Collection(['fields' => [self::KEY_MESSAGE => new Assert\NotBlank()], 'allowExtraFields' => true])
+//                        ]
+//                    ]
+//                )
+//            );
         } else {
             $this->validate($data[self::KEY_MESSAGE], new Assert\NotBlank());
         }

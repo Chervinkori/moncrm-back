@@ -56,9 +56,9 @@ class UserSessionService
      */
     public function deleteExpireSession(User $user): void
     {
-        // Получаем просроченные сессии для пользователя
+        // Получает просроченные сессии для пользователя
         $sessions = $this->userSessionRepository->getExpireSessions(new \DateTime, $user);
-        // Удаляем просроченные сессии
+        // Удаляет просроченные сессии
         $this->deleteSessions($sessions);
     }
 
@@ -101,7 +101,7 @@ class UserSessionService
         $userSession->setIp($clientIp);
         $userSession->setExp(new \DateTime('+' . $this->params->get('refresh_token_lifetime') . ' hour'));
         $userSession->setFingerprint($fingerprint);
-        // Сохраняем
+        // Сохранение
         $this->entityManager->persist($userSession);
         $this->entityManager->flush();
 
