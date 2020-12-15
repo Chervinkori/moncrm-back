@@ -22,6 +22,9 @@ security:
                 authenticators:
                     - App\Module\User\Security\JWTAuthenticator
 
+            # Не храним пользователя в сессии
+            stateless: true
+
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#firewalls-authentication
 

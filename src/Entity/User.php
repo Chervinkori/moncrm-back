@@ -19,7 +19,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  * @ORM\Table(name="`user`")
  *
  * @UniqueEntity(fields="email", message="Пользователь с таким адресом электронной почты уже существует.",
- *                               groups={"common"})
+ *                               groups={"main"})
  *
  * @package App\Entity
  * @author  Roman Chervinko <romachervinko@gmail.com>
@@ -40,6 +40,8 @@ class User extends AbstractEntity implements UserInterface
      * @ORM\Column(type="uuid", unique=true)
      * @ORM\GeneratedValue(strategy="CUSTOM")
      * @ORM\CustomIdGenerator(class=UuidGenerator::class)
+     *
+     * @Assert\Uuid(groups={"main"})
      */
     protected $uuid;
 
@@ -47,8 +49,8 @@ class User extends AbstractEntity implements UserInterface
      * @var string
      * @ORM\Column(type="string", length=180, unique=true)
      *
-     * @Assert\NotBlank(groups={"common"})
-     * @Assert\Email(groups={"common"})
+     * @Assert\NotBlank(groups={"main"})
+     * @Assert\Email(groups={"main"})
      */
     protected $email;
 
@@ -56,8 +58,8 @@ class User extends AbstractEntity implements UserInterface
      * @var string
      * @ORM\Column(type="string")
      *
-     * @Assert\NotBlank(groups={"common"})
-     * @Assert\Length(min=2, max=50, groups={"common"})
+     * @Assert\NotBlank(groups={"main"})
+     * @Assert\Length(min=2, max=50, groups={"main"})
      */
     protected $firstname;
 
@@ -65,7 +67,7 @@ class User extends AbstractEntity implements UserInterface
      * @var string|null
      * @ORM\Column(type="string", nullable=true)
      *
-     * @Assert\Length(min=2, max=50, groups={"common"})
+     * @Assert\Length(min=2, max=50, groups={"main"})
      */
     protected $middlename;
 
@@ -73,8 +75,8 @@ class User extends AbstractEntity implements UserInterface
      * @var string
      * @ORM\Column(type="string")
      *
-     * @Assert\NotBlank(groups={"common"})
-     * @Assert\Length(min=2, max=50, groups={"common"})
+     * @Assert\NotBlank(groups={"main"})
+     * @Assert\Length(min=2, max=50, groups={"main"})
      */
     protected $lastname;
 
@@ -87,8 +89,8 @@ class User extends AbstractEntity implements UserInterface
      * @var string The hashed password
      * @ORM\Column(type="string")
      *
-     * @Assert\NotBlank(groups={"common"})
-     * @Assert\NotCompromisedPassword(groups={"common"})
+     * @Assert\NotBlank(groups={"main"})
+     * @Assert\NotCompromisedPassword(groups={"main"})
      */
     protected $password;
 

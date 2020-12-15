@@ -16,7 +16,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
+use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Контроллер авторизации.
@@ -50,9 +52,9 @@ class AuthController extends AbstractController
         $user = $hydrator->hydrate($request->request->all(), new User());
 
         // Валидация данных
-        $errors = $validator->validate($user, null, 'common');
-        if ($errors->count()) {
-            return $jsonResponse->error(null, $errors, $request);
+        $violations = $validator->validate($user, null, 'main');
+        if ($violations->count()) {
+            return $jsonResponse->error(null, $violations, $request);
         }
 
         $em = $this->getDoctrine()->getManager();
@@ -157,6 +159,13 @@ class AuthController extends AbstractController
             return $jsonResponse->error('Отсутствует токен обновления доступа');
         }
 
+        // Валидация токена
+        $violations = Validation::createValidator()->validate($refreshToken, new Assert\Uuid());
+        if ($violations->count()) {
+            // TODO: залогировать
+            return $jsonResponse->error('Отсутствует токен обновления доступа');
+        }
+
         /** @var UserSession $userSession */
         $userSession = $userSessionRepository->find($refreshToken);
         if (!$userSession) {
@@ -245,13 +254,18 @@ class AuthController extends AbstractController
         // Получает из кук рефреш токен
         $refreshToken = $request->cookies->get('refresh_token');
         if ($refreshToken) {
-            /** @var UserSession $userSession */
-            $userSession = $userSessionRepository->find($refreshToken);
-            if ($userSession) {
-                // Удаляет текущую сессии (чтобы не дублировать)
-                $em = $this->getDoctrine()->getManager();
-                $em->remove($userSession);
-                $em->flush();
+            // Валидация токена
+            $violations = Validation::createValidator()->validate($refreshToken, new Assert\Uuid());
+            // Если токен валидный - делает поиск в сессиях пользователей
+            if (!$violations->count()) {
+                /** @var UserSession $userSession */
+                $userSession = $userSessionRepository->find($refreshToken);
+                if ($userSession) {
+                    // Удаляет текущую сессии (чтобы не дублировать)
+                    $em = $this->getDoctrine()->getManager();
+                    $em->remove($userSession);
+                    $em->flush();
+                }
             }
 
             // Удаляет токен обновления доступа из cookie

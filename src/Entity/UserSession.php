@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\UserSessionRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Ramsey\Uuid\Doctrine\UuidGenerator;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Сущность пользовательских сессий.
@@ -23,6 +24,8 @@ class UserSession extends AbstractEntity
      * @ORM\Column(type="uuid", unique=true)
      * @ORM\GeneratedValue(strategy="CUSTOM")
      * @ORM\CustomIdGenerator(class=UuidGenerator::class)
+     *
+     * @Assert\Uuid(groups={"main"})
      */
     protected $uuid;
 
@@ -36,6 +39,8 @@ class UserSession extends AbstractEntity
     /**
      * @var string
      * @ORM\Column(type="string")
+     *
+     * @Assert\Ip(groups={"main"})
      */
     protected $ip;
 
