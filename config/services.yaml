@@ -4,7 +4,12 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
-
+    # Секретный ключ (для генерации токена доступа)
+    app_secret: '%env(APP_SECRET)%'
+    # Время жизни токена доступа в секундах
+    access_token_lifetime: 1800
+    # Время жизни рефреш токена в часах
+    refresh_token_lifetime: 1440
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -24,7 +29,8 @@ services:
     # controllers are imported separately to make sure services can be injected
     # as action arguments even if you don't extend any base controller class
     App\Controller\:
-        resource: '../src/Controller/'
+        namespace: App\Module\
+        resource: '../src/Module/*/Controller/'
         tags: ['controller.service_arguments']
 
     # add more service definitions when explicit configuration is needed
