@@ -20,6 +20,7 @@ class FirstUppercaseStrategy implements StrategyInterface
      */
     public function extract($value, ?object $object = null)
     {
+        return $value;
     }
 
     /**
