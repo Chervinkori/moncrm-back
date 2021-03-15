@@ -56,7 +56,8 @@ class JsonResponseBuilder extends BaseResponseBuilder
      */
     public function withData($data = null): self
     {
-        $this->validate($data, new Assert\Type(['array', 'boolean', 'integer', 'string', 'object']));
+        $this->validate($data, new Assert\Type(['array', 'object']));
+
         // Ограничения для объекта
         if (gettype($data) === 'object') {
             // Только для отрицательного ответа
@@ -136,6 +137,8 @@ class JsonResponseBuilder extends BaseResponseBuilder
     private function getData(): ?array
     {
         $data = null;
+
+        // Обработка объекта валидации
         if ($this->data instanceof ConstraintViolationListInterface) {
             /** @var ConstraintViolation $error */
             foreach ($this->data as $error) {

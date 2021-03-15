@@ -17,20 +17,25 @@ use Ramsey\Uuid\Uuid;
 abstract class AbstractEntity
 {
     /**
+     * @var bool С функционалом предварительного обновления.
+     */
+    protected $withPreUpdate = true;
+
+    /**
      * @var string
-     * @ORM\Column(type="uuid", unique=true)
+     * @ORM\Column(type="uuid", unique=true, options={"comment":"Уникальный идентификатор"})
      */
     protected $uuid;
 
     /**
      * @var \DateTime
-     * @ORM\Column(type="datetime")
+     * @ORM\Column(type="datetime", options={"comment":"Дата и время создания"})
      */
     protected $createdAt;
 
     /**
      * @var \DateTime|null
-     * @ORM\Column(type="datetime", nullable=true)
+     * @ORM\Column(type="datetime", nullable=true, options={"comment":"Дата и время обновления"})
      */
     protected $updatedAt;
 
@@ -77,7 +82,7 @@ abstract class AbstractEntity
     /**
      * @return \DateTime|null
      */
-    public function getUpdatedAt()
+    public function getUpdatedAt(): ?\DateTime
     {
         return $this->updatedAt;
     }
@@ -111,7 +116,9 @@ abstract class AbstractEntity
      */
     public function preUpdate(): self
     {
-        $this->updatedAt = new \DateTime;
+        if ($this->withPreUpdate) {
+            $this->updatedAt = new \DateTime;
+        }
 
         return $this;
     }

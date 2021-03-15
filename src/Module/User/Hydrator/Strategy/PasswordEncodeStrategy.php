@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Hydrator\Strategy;
+namespace App\Module\User\Hydrator\Strategy;
 
 use App\Entity\User;
 use Laminas\Hydrator\Strategy\StrategyInterface;
@@ -9,7 +9,7 @@ use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 /**
  * Стратегия кодирования пароля пользователя.
  *
- * @package App\Hydrator\Strategy
+ * @package App\Module\User\Hydrator\Strategy
  * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class PasswordEncodeStrategy implements StrategyInterface

@@ -9,7 +9,8 @@ parameters:
     # Время жизни токена доступа в секундах
     access_token_lifetime: 1800
     # Время жизни рефреш токена в часах
-    refresh_token_lifetime: 1440
+    user_session_lifetime.normal: 8
+    user_session_lifetime.remember: 168 # 1 неделя
 services:
     # default configuration for services in *this* file
     _defaults:

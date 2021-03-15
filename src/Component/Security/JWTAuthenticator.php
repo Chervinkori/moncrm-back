@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Security;
+namespace App\Component\Security;
 
 use App\Component\Response\JsonResponse;
 use App\Component\Token\JWT;

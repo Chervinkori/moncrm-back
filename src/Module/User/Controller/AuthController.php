@@ -6,18 +6,18 @@ use App\Component\Response\JsonResponse;
 use App\Component\Token\JWT;
 use App\Entity\User;
 use App\Entity\UserSession;
-use App\Hydrator\UserHydrator;
+use App\Module\User\Hydrator\UserHydratorBuilder;
 use App\Module\User\Service\UserSessionService;
 use App\Repository\UserRepository;
 use App\Repository\UserSessionRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Routing\Annotation\Route;
 
 /**
  * Контроллер авторизации.
@@ -32,12 +32,12 @@ class AuthController extends AbstractController
     /**
      * Регистрация пользователя в системе.
      *
-     * @Route("/register", name="register", methods={"POST"})
+     * @Route("/sign-up", name="sign-up", methods={"POST"})
      *
-     * @param Request            $request
-     * @param JsonResponse       $jsonResponse
-     * @param ValidatorInterface $validator
-     * @param UserHydrator       $userHydrator
+     * @param Request             $request
+     * @param JsonResponse        $jsonResponse
+     * @param ValidatorInterface  $validator
+     * @param UserHydratorBuilder $userHydratorBuilder
      *
      * @return Response
      */
@@ -45,10 +45,9 @@ class AuthController extends AbstractController
         Request $request,
         JsonResponse $jsonResponse,
         ValidatorInterface $validator,
-        UserHydrator $userHydrator
+        UserHydratorBuilder $userHydratorBuilder
     ): Response {
-        $hydrator = $userHydrator->create();
-        $user = $hydrator->hydrate($request->request->all(), new User());
+        $user = $userHydratorBuilder->build()->hydrate($request->request->all(), new User());
 
         // Валидация данных
         $violations = $validator->validate($user, null, 'main');
@@ -98,7 +97,7 @@ class AuthController extends AbstractController
         $user = $userRepository->findOneBy(['email' => $request->get('email')]);
         // Проверяет пользователя и валидность пароля
         if (!$user || !$encoder->isPasswordValid($user, $request->get('password'))) {
-            return $jsonResponse->error('Неверный логин или пароль', null, $request);
+            return $jsonResponse->error('Неверная электронная почта или пароль.', null, $request);
         }
 
         // Удаляет просроченные сессии пользователя
@@ -109,7 +108,12 @@ class AuthController extends AbstractController
         // Удаляет текущие сессии (чтобы не дублировать)
         $userSessionService->deleteSessions($currentUserSessions);
         // Создаём сессию пользователя
-        $userSession = $userSessionService->createUserSession($user, $request->getClientIp());
+        $userSession = $userSessionService->createUserSession(
+            $user,
+            $request->getClientIp(),
+            null,
+            $request->get('rememberMe') ?? false
+        );
 
         // Генерирует токен доступа
         $accessToken = JWT::encode(
@@ -118,11 +122,11 @@ class AuthController extends AbstractController
             $this->getParameter('access_token_lifetime')
         );
 
-        // Создаём куку для рефреш токена (сессии)
+        // Создаём куку для сессии
         $userSessionCookie = $userSessionService->createUserSessionCookie($userSession);
 
         return $jsonResponse->success(
-            ['access_token' => $accessToken, 'refresh_token' => $userSession->getUuid(), 'token_type' => 'bearer'],
+            ['access_token' => $accessToken, 'user_session' => $userSession->getUuid(), 'token_type' => 'bearer'],
             null,
             null,
             $request,
@@ -151,25 +155,25 @@ class AuthController extends AbstractController
         UserSessionRepository $userSessionRepository,
         UserSessionService $userSessionService
     ): Response {
-        // Получает из кук рефреш токен
-        $refreshToken = $request->cookies->get('refresh_token');
-        if (!$refreshToken) {
-            return $jsonResponse->error('Отсутствует токен обновления доступа');
+        // Получает из кук токен сессии
+        $userSessionToken = $request->cookies->get('user_session');
+        if (!$userSessionToken) {
+            return $jsonResponse->error('Отсутствует токен сессии пользователя');
         }
 
         // Валидация токена
-        $violations = Validation::createValidator()->validate($refreshToken, new Assert\Uuid());
+        $violations = Validation::createValidator()->validate($userSessionToken, new Assert\Uuid());
         if ($violations->count()) {
             // TODO: залогировать
-            return $jsonResponse->error('Отсутствует токен обновления доступа');
+            return $jsonResponse->error('Отсутствует токен сессии пользователя');
         }
 
         /** @var UserSession $userSession */
-        $userSession = $userSessionRepository->find($refreshToken);
+        $userSession = $userSessionRepository->find($userSessionToken);
         if (!$userSession) {
             $response = $jsonResponse->error('Сессия пользователя не найдена', null, $request);
-            // Удаляет токен обновления доступа из cookie
-            $response->headers->clearCookie('refresh_token', '/backend/auth');
+            // Удаляет токен сессии из cookie
+            $response->headers->clearCookie('user_session', '/backend/auth');
 
             return $response;
         }
@@ -182,13 +186,13 @@ class AuthController extends AbstractController
             $em->flush();
 
             $response = $jsonResponse->error('Сессия пользователя истекла', null, $request);
-            // Удаляет токен обновления доступа из cookie
-            $response->headers->clearCookie('refresh_token', '/backend/auth');
+            // Удаляет токен сессии из cookie
+            $response->headers->clearCookie('user_session', '/backend/auth');
 
             return $response;
         }
 
-        // Проверяет что рефреш токен не украден.
+        // Проверяет что токен сессии не украден.
         // Т.е. ip пользователя на момент создания токена и сейчас совпадают
         // TODO: дописать проверку fingerprint
         if ($userSession->getIp() != $request->getClientIp()) {
@@ -199,8 +203,8 @@ class AuthController extends AbstractController
             // TODO: залогировать
 
             $response = $jsonResponse->error('Сессия пользователя не найдена', null, $request);
-            // Удаляет токен обновления доступа из cookie
-            $response->headers->clearCookie('refresh_token', '/backend/auth');
+            // Удаляет токен сессии из cookie
+            $response->headers->clearCookie('user_session', '/backend/auth');
 
             return $response;
         }
@@ -220,11 +224,11 @@ class AuthController extends AbstractController
             $this->getParameter('access_token_lifetime')
         );
 
-        // Создаёт куку для рефреш токена (сессии)
+        // Создаёт куку для сессии
         $userSessionCookie = $userSessionService->createUserSessionCookie($userSession);
 
         return $jsonResponse->success(
-            ['access_token' => $accessToken, 'refresh_token' => $userSession->getUuid(), 'token_type' => 'bearer'],
+            ['access_token' => $accessToken, 'user_session' => $userSession->getUuid(), 'token_type' => 'bearer'],
             null,
             null,
             $request,
@@ -249,15 +253,15 @@ class AuthController extends AbstractController
     ): Response {
         $response = $jsonResponse->success();
 
-        // Получает из кук рефреш токен
-        $refreshToken = $request->cookies->get('refresh_token');
-        if ($refreshToken) {
+        // Получает из кук токен сессии
+        $userSessionToken = $request->cookies->get('user_session');
+        if ($userSessionToken) {
             // Валидация токена
-            $violations = Validation::createValidator()->validate($refreshToken, new Assert\Uuid());
+            $violations = Validation::createValidator()->validate($userSessionToken, new Assert\Uuid());
             // Если токен валидный - делает поиск в сессиях пользователей
             if (!$violations->count()) {
                 /** @var UserSession $userSession */
-                $userSession = $userSessionRepository->find($refreshToken);
+                $userSession = $userSessionRepository->find($userSessionToken);
                 if ($userSession) {
                     // Удаляет текущую сессии (чтобы не дублировать)
                     $em = $this->getDoctrine()->getManager();
@@ -266,8 +270,8 @@ class AuthController extends AbstractController
                 }
             }
 
-            // Удаляет токен обновления доступа из cookie
-            $response->headers->clearCookie('refresh_token', '/backend/auth');
+            // Удаляет токен сессии из cookie
+            $response->headers->clearCookie('user_session', '/backend/auth');
         }
 
         return $response;

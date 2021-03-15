@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\UserRepository;
 use Doctrine\ORM\PersistentCollection;
@@ -18,8 +19,9 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
  * @ORM\Entity(repositoryClass=UserRepository::class)
  * @ORM\Table(name="`user`")
  *
- * @UniqueEntity(fields="email", message="Пользователь с таким адресом электронной почты уже существует.",
- *                               groups={"main"})
+ * @UniqueEntity(fields="email",
+ *     message="Пользователь с таким адресом электронной почты уже существует.",
+ *     groups={"main"})
  *
  * @package App\Entity
  * @author  Roman Chervinko <romachervinko@gmail.com>
@@ -36,8 +38,9 @@ class User extends AbstractEntity implements UserInterface
 
     /**
      * @var string
+     *
      * @ORM\Id
-     * @ORM\Column(type="uuid", unique=true)
+     * @ORM\Column(type="uuid", unique=true, options={"comment":"Уникальный идентификатор"})
      * @ORM\GeneratedValue(strategy="CUSTOM")
      * @ORM\CustomIdGenerator(class=UuidGenerator::class)
      *
@@ -47,7 +50,8 @@ class User extends AbstractEntity implements UserInterface
 
     /**
      * @var string
-     * @ORM\Column(type="string", length=180, unique=true)
+     *
+     * @ORM\Column(type="string", length=180, unique=true, options={"comment":"Адрес электронной почты"})
      *
      * @Assert\NotBlank(groups={"main"})
      * @Assert\Email(groups={"main"})
@@ -56,7 +60,8 @@ class User extends AbstractEntity implements UserInterface
 
     /**
      * @var string
-     * @ORM\Column(type="string")
+     *
+     * @ORM\Column(type="string", options={"comment":"Имя"})
      *
      * @Assert\NotBlank(groups={"main"})
      * @Assert\Length(min=2, max=50, groups={"main"})
@@ -65,15 +70,20 @@ class User extends AbstractEntity implements UserInterface
 
     /**
      * @var string|null
-     * @ORM\Column(type="string", nullable=true)
      *
-     * @Assert\Length(min=2, max=50, groups={"main"})
+     * @ORM\Column(type="string", nullable=true, options={"comment":"Отчество"})
+     *
+     * @Assert\AtLeastOneOf({
+     *     @Assert\Length(min=2, max=50),
+     *     @Assert\Blank
+     * }, groups={"main"})
      */
     protected $middlename;
 
     /**
      * @var string
-     * @ORM\Column(type="string")
+     *
+     * @ORM\Column(type="string", options={"comment":"Фамилия"})
      *
      * @Assert\NotBlank(groups={"main"})
      * @Assert\Length(min=2, max=50, groups={"main"})
@@ -81,13 +91,14 @@ class User extends AbstractEntity implements UserInterface
     protected $lastname;
 
     /**
-     * @ORM\Column(type="json")
+     * @ORM\Column(type="json", options={"comment":"Роли"})
      */
     protected $roles = [];
 
     /**
      * @var string The hashed password
-     * @ORM\Column(type="string")
+     *
+     * @ORM\Column(type="string", options={"comment":"Пароль"})
      *
      * @Assert\NotBlank(groups={"main"})
      * @Assert\NotCompromisedPassword(groups={"main"})
@@ -95,7 +106,34 @@ class User extends AbstractEntity implements UserInterface
     protected $password;
 
     /**
+     * @var string|null
+     *
+     * @ORM\Column(type="string", nullable=true, options={"comment":"Аватар"})
+     *
+     * @Assert\Url(groups={"additional"})
+     */
+    protected $avatar;
+
+    /**
+     * @var string|null
+     *
+     * @ORM\Column(type="string", nullable=true, options={"comment":"Статус доступности"})
+     *
+     * @Assert\Choice({"online", "away", "busy", "not-visible"}, groups={"additional"})
+     */
+    protected $status;
+
+    /**
+     * @var \DateTime|null
+     * @ORM\Column(type="datetime", nullable=true, options={"comment":"Дата и время запроса персональных данных"})
+     */
+    protected $personalRequestedAt;
+
+    /**
+     * Сессии пользователя
+     *
      * @var ArrayCollection|PersistentCollection
+     *
      * @ORM\OneToMany(targetEntity="UserSession", mappedBy="user")
      */
     protected $sessions;
@@ -200,6 +238,67 @@ class User extends AbstractEntity implements UserInterface
     public function setPassword(string $password): self
     {
         $this->password = $password;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getAvatar(): ?string
+    {
+        return $this->avatar;
+    }
+
+    /**
+     * @param string|null $avatar
+     *
+     * @return User
+     */
+    public function setAvatar(?string $avatar): self
+    {
+        $this->avatar = $avatar;
+
+        return $this;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getStatus(): ?string
+    {
+        return $this->status;
+    }
+
+    /**
+     * @param string|null $status
+     *
+     * @return User
+     */
+    public function setStatus(?string $status): self
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+
+    /**
+     * @return \DateTime|null
+     */
+    public function getPersonalRequestedAt(): ?\DateTime
+    {
+        return $this->personalRequestedAt;
+    }
+
+    /**
+     * @param \DateTime|null $personalRequestedAt
+     *
+     * @return User
+     */
+    public function setPersonalRequestedAt(?\DateTime $personalRequestedAt): self
+    {
+        $this->personalRequestedAt = $personalRequestedAt;
+        $this->withPreUpdate = false;
 
         return $this;
     }

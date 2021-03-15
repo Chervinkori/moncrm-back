@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Hydrator\Strategy;
+namespace App\Component\Hydrator\Strategy;
 
 use Laminas\Hydrator\Strategy\StrategyInterface;
 
 /**
  * Стратегия, приводящая первый символ к верхнему регистру.
  *
- * @package App\Hydrator\Strategy
+ * @package App\Component\Hydrator\Strategy
  * @author  Roman Chervinko <romachervinko@gmail.com>
  */
 class FirstUppercaseStrategy implements StrategyInterface

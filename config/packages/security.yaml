@@ -16,13 +16,13 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
         public:
-            pattern: ^/backend/(auth|out)/
+            pattern: ^/backend/(auth|public)/
             security: false
         main:
             lazy: true
             provider: app_user_provider
             custom_authenticators:
-                - App\Security\JWTAuthenticator
+                - App\Component\Security\JWTAuthenticator
 
             # Не храним пользователя в сессии
             stateless: true
@@ -36,6 +36,5 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        - { path: ^/backend/open-home, roles: PUBLIC_ACCESS }
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }

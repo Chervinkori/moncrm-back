@@ -89,18 +89,24 @@ class UserSessionService
      * @param User        $user
      * @param string      $clientIp
      * @param string|null $fingerprint
+     * @param bool        $remember
      *
      * @return UserSession
      * @throws \Exception
      */
-    public function createUserSession(User $user, string $clientIp, string $fingerprint = null): UserSession
+    public function createUserSession(User $user, string $clientIp, string $fingerprint = null, bool $remember = false): UserSession
     {
-        // TODO: перенести в гидратор?
         $userSession = new UserSession();
         $userSession->setUser($user);
         $userSession->setIp($clientIp);
-        $userSession->setExp(new \DateTime('+' . $this->params->get('refresh_token_lifetime') . ' hour'));
         $userSession->setFingerprint($fingerprint);
+
+        $userSessionLifetime = $remember ?
+            $this->params->get('user_session_lifetime.remember')
+            : $this->params->get('user_session_lifetime.normal');
+
+        $userSession->setExp(new \DateTime('+' . $userSessionLifetime . ' hour'));
+
         // Сохранение
         $this->entityManager->persist($userSession);
         $this->entityManager->flush();
@@ -109,7 +115,7 @@ class UserSessionService
     }
 
     /**
-     * Создаёт куку с refresh_token для сессии пользователя.
+     * Создаёт куку с user_session для сессии пользователя.
      *
      * @param UserSession $userSession
      *
@@ -118,7 +124,7 @@ class UserSessionService
     public function createUserSessionCookie(UserSession $userSession): Cookie
     {
         return Cookie::create(
-            'refresh_token',
+            'user_session',
             $userSession->getUuid(),
             $userSession->getExp(),
             '/backend/auth',

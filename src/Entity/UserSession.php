@@ -21,7 +21,7 @@ class UserSession extends AbstractEntity
     /**
      * @var string
      * @ORM\Id()
-     * @ORM\Column(type="uuid", unique=true)
+     * @ORM\Column(type="uuid", unique=true, options={"comment":"Уникальный идентификатор"})
      * @ORM\GeneratedValue(strategy="CUSTOM")
      * @ORM\CustomIdGenerator(class=UuidGenerator::class)
      *
@@ -38,7 +38,7 @@ class UserSession extends AbstractEntity
 
     /**
      * @var string
-     * @ORM\Column(type="string")
+     * @ORM\Column(type="string", options={"comment":"Ip-адрес"})
      *
      * @Assert\Ip(groups={"main"})
      */
@@ -46,13 +46,13 @@ class UserSession extends AbstractEntity
 
     /**
      * @var \DateTime
-     * @ORM\Column(type="datetime")
+     * @ORM\Column(type="datetime", options={"comment":"Срок жизни сессии (до)"})
      */
     protected $exp;
 
     /**
      * @var string|null
-     * @ORM\Column(type="string", nullable=true)
+     * @ORM\Column(type="string", nullable=true, options={"comment":"Цифровой отпечаток пользоватея"})
      */
     protected $fingerprint;
 
